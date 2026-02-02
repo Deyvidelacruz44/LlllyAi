@@ -1,0 +1,116 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Verificar que el documento pertenece al usuario actual
+    function isDocumentOwner() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+    
+    // Verificar que el nuevo documento tendrá el userId correcto
+    function hasValidUserId() {
+      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+    
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // Tasks collection - Solo el propietario puede acceder
+    match /tasks/{taskId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Events collection - Solo el propietario puede acceder
+    match /events/{eventId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Projects collection - Solo el propietario puede acceder
+    match /projects/{projectId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Categories collection - Solo el propietario puede acceder
+    match /categories/{categoryId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // AI conversations - Solo el propietario puede acceder
+    match /ai_conversations/{conversationId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Analytics collection - Solo el propietario puede acceder
+    match /analytics/{analyticsId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Notifications - Solo el propietario puede acceder
+    match /notifications/{notificationId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Chats with nested messages
+    match /chats/{chatId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+      
+      match /messages/{messageId} {
+        allow read: if get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid;
+        allow write: if get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid;
+      }
+    }
+    
+    // Chat messages collection (top-level)
+    match /chat_messages/{messageId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // User profiles - Solo el propietario puede acceder
+    match /user_profiles/{profileId} {
+      allow read: if isSignedIn() && request.auth.uid == profileId;
+      allow create: if isSignedIn() && request.auth.uid == profileId;
+      allow update: if isSignedIn() && request.auth.uid == profileId;
+      allow delete: if isSignedIn() && request.auth.uid == profileId;
+    }
+  }
+}

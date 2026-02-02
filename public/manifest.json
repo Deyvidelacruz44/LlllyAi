@@ -1,0 +1,56 @@
+{
+  "name": "Agenda AI Personal",
+  "short_name": "Agenda AI",
+  "description": "Agenda personal inteligente con asistente IA y análisis de métricas",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Nuevo Evento",
+      "short_name": "Evento",
+      "description": "Crear un nuevo evento",
+      "url": "/dashboard?action=new-event",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Nueva Tarea",
+      "short_name": "Tarea",
+      "description": "Crear una nueva tarea",
+      "url": "/dashboard/tasks?action=new-task",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Chat IA",
+      "short_name": "Chat",
+      "description": "Hablar con el asistente IA",
+      "url": "/dashboard/chat",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": []
+}
