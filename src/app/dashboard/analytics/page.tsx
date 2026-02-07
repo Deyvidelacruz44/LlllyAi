@@ -328,442 +328,226 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="bg-gradient-to-br from-purple-500 to-blue-600 p-2 rounded-xl">
-              <Brain className="w-7 h-7 text-white" />
-            </div>
-            Métricas y Análisis
-          </h2>
-          <p className="text-gray-600 mt-2">
-            Análisis detallado de los últimos <span className="font-semibold text-blue-600">{dateRange} días</span> de actividad
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="bg-gradient-to-br from-purple-500 to-blue-600 p-1.5 rounded-lg">
+            <Brain className="w-4 h-4 text-white" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">Métricas</h2>
+          <span className="text-xs text-gray-500">({dateRange} días)</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <select
             value={dateRange}
             onChange={(e) => setDateRange(Number(e.target.value))}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+            className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 bg-white"
           >
-            <option value={7}>Últimos 7 días</option>
-            <option value={14}>Últimos 14 días</option>
-            <option value={30}>Últimos 30 días</option>
-            <option value={90}>Últimos 90 días</option>
+            <option value={7}>7 días</option>
+            <option value={14}>14 días</option>
+            <option value={30}>30 días</option>
           </select>
           <button
             onClick={loadLocalStats}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-            title="Actualizar métricas"
+            className="p-1 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-5 h-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* Estadísticas principales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <Calendar className="w-10 h-10 opacity-90" />
-            <span className="text-4xl font-bold">{localStats?.totalEvents || 0}</span>
+      {/* Estadísticas principales - Compactas */}
+      <div className="grid grid-cols-4 gap-2">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 rounded-lg">
+          <div className="flex items-center justify-between">
+            <Calendar className="w-5 h-5 opacity-80" />
+            <span className="text-2xl font-bold">{localStats?.totalEvents || 0}</span>
           </div>
-          <p className="text-blue-100 text-sm font-medium">Eventos del período</p>
-          <div className="mt-3 pt-3 border-t border-blue-400 text-xs text-blue-100 space-y-1">
-            <div className="flex justify-between">
-              <span>Hoy:</span>
-              <span className="font-semibold">{localStats?.todayEvents || 0}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Esta semana:</span>
-              <span className="font-semibold">{localStats?.thisWeekEvents || 0}</span>
-            </div>
+          <p className="text-blue-100 text-xs mt-1">Eventos</p>
+          <div className="text-[10px] text-blue-200 mt-1 flex justify-between">
+            <span>Hoy: {localStats?.todayEvents || 0}</span>
+            <span>Semana: {localStats?.thisWeekEvents || 0}</span>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <Award className="w-10 h-10 opacity-90" />
-            <span className="text-4xl font-bold">{localStats?.completionRate || 0}%</span>
+        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-3 rounded-lg">
+          <div className="flex items-center justify-between">
+            <Award className="w-5 h-5 opacity-80" />
+            <span className="text-2xl font-bold">{localStats?.completionRate || 0}%</span>
           </div>
-          <p className="text-green-100 text-sm font-medium">Tasa de completación</p>
-          <div className="mt-3 pt-3 border-t border-green-400 text-xs text-green-100">
-            <div className="flex justify-between">
-              <span>Completadas:</span>
-              <span className="font-semibold">{localStats?.completedTasks || 0} / {localStats?.totalTasks || 0}</span>
-            </div>
+          <p className="text-green-100 text-xs mt-1">Completación</p>
+          <div className="text-[10px] text-green-200 mt-1">
+            {localStats?.completedTasks || 0}/{localStats?.totalTasks || 0} tareas
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <MessageSquare className="w-10 h-10 opacity-90" />
-            <span className="text-4xl font-bold">{localStats?.totalConversations || 0}</span>
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-3 rounded-lg">
+          <div className="flex items-center justify-between">
+            <MessageSquare className="w-5 h-5 opacity-80" />
+            <span className="text-2xl font-bold">{localStats?.totalConversations || 0}</span>
           </div>
-          <p className="text-purple-100 text-sm font-medium">Interacciones con IA</p>
-          <div className="mt-3 pt-3 border-t border-purple-400 text-xs text-purple-100">
-            <div className="flex justify-between">
-              <span>Acciones ejecutadas:</span>
-              <span className="font-semibold">{localStats?.actionsFromChat || 0}</span>
-            </div>
+          <p className="text-purple-100 text-xs mt-1">Chats IA</p>
+          <div className="text-[10px] text-purple-200 mt-1">
+            {localStats?.actionsFromChat || 0} acciones
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <AlertCircle className="w-10 h-10 opacity-90" />
-            <span className="text-4xl font-bold">{localStats?.overdueTasks || 0}</span>
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-3 rounded-lg">
+          <div className="flex items-center justify-between">
+            <AlertCircle className="w-5 h-5 opacity-80" />
+            <span className="text-2xl font-bold">{localStats?.overdueTasks || 0}</span>
           </div>
-          <p className="text-orange-100 text-sm font-medium">Tareas vencidas</p>
-          <div className="mt-3 pt-3 border-t border-orange-400 text-xs text-orange-100">
-            <div className="flex justify-between">
-              <span>Próximos eventos:</span>
-              <span className="font-semibold">{localStats?.upcomingEvents || 0}</span>
-            </div>
+          <p className="text-orange-100 text-xs mt-1">Vencidas</p>
+          <div className="text-[10px] text-orange-200 mt-1">
+            {localStats?.upcomingEvents || 0} próximos
           </div>
         </div>
       </div>
 
-      {/* Estado de tareas y Eventos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Estado de tareas y Eventos - Compacto */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Estado de tareas */}
-        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-blue-600" />
-            Distribución de Tareas
+        <div className="bg-white border border-gray-200 p-3 rounded-lg">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1">
+            <Target className="w-4 h-4 text-blue-600" />
+            Tareas
           </h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600 flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  Completadas
-                </span>
-                <span className="font-semibold text-green-600">{localStats?.completedTasks || 0}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${localStats?.totalTasks ? (localStats.completedTasks / localStats.totalTasks) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600 flex items-center gap-1">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                  En progreso
-                </span>
-                <span className="font-semibold text-blue-600">{localStats?.inProgressTasks || 0}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${localStats?.totalTasks ? (localStats.inProgressTasks / localStats.totalTasks) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600 flex items-center gap-1">
-                  <Activity className="w-4 h-4 text-orange-600" />
-                  Pendientes
-                </span>
-                <span className="font-semibold text-orange-600">{localStats?.pendingTasks || 0}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${localStats?.totalTasks ? (localStats.pendingTasks / localStats.totalTasks) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-            {localStats && localStats.overdueTasks > 0 && (
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4 text-red-600" />
-                    Vencidas
-                  </span>
-                  <span className="font-semibold text-red-600">{localStats.overdueTasks}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${localStats.totalTasks ? (localStats.overdueTasks / localStats.totalTasks) * 100 : 0}%` }}
-                  />
+          <div className="space-y-2">
+            {[
+              { label: 'Completadas', count: localStats?.completedTasks || 0, color: 'green' },
+              { label: 'En progreso', count: localStats?.inProgressTasks || 0, color: 'blue' },
+              { label: 'Pendientes', count: localStats?.pendingTasks || 0, color: 'orange' },
+            ].map(item => (
+              <div key={item.label} className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full bg-${item.color}-500`}></div>
+                <span className="text-xs text-gray-600 flex-1">{item.label}</span>
+                <span className={`text-xs font-bold text-${item.color}-600`}>{item.count}</span>
+                <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                  <div className={`bg-${item.color}-500 h-1.5 rounded-full`} style={{ width: `${localStats?.totalTasks ? (item.count / localStats.totalTasks) * 100 : 0}%` }} />
                 </div>
               </div>
-            )}
+            ))}
           </div>
-          <div className="mt-6 pt-4 border-t">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Total de tareas:</span>
-              <span className="text-2xl font-bold text-gray-900">{localStats?.totalTasks || 0}</span>
-            </div>
+          <div className="mt-2 pt-2 border-t text-xs flex justify-between">
+            <span className="text-gray-500">Total:</span>
+            <span className="font-bold">{localStats?.totalTasks || 0}</span>
           </div>
         </div>
 
         {/* Eventos por tipo */}
-        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-purple-600" />
-            Eventos por Tipo
+        <div className="bg-white border border-gray-200 p-3 rounded-lg">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1">
+            <Calendar className="w-4 h-4 text-purple-600" />
+            Eventos
           </h3>
           {localStats?.eventsByType && Object.keys(localStats.eventsByType).length > 0 ? (
-            <div className="space-y-3">
-              {Object.entries(localStats.eventsByType)
-                .sort(([,a], [,b]) => b - a)
-                .map(([type, count]) => {
-                  const total = localStats.totalEvents || 1;
-                  const percentage = Math.round((count / total) * 100);
-                  const colors: Record<string, { gradient: string; text: string }> = {
-                    work: { gradient: 'from-blue-500 to-blue-600', text: 'text-blue-700' },
-                    personal: { gradient: 'from-green-500 to-green-600', text: 'text-green-700' },
-                    meeting: { gradient: 'from-purple-500 to-purple-600', text: 'text-purple-700' },
-                    reminder: { gradient: 'from-yellow-500 to-yellow-600', text: 'text-yellow-700' },
-                    other: { gradient: 'from-gray-500 to-gray-600', text: 'text-gray-700' },
-                  };
-                  const labels: Record<string, string> = {
-                    work: '💼 Trabajo',
-                    personal: '🏠 Personal',
-                    meeting: '👥 Reunión',
-                    reminder: '🔔 Recordatorio',
-                    other: '📌 Otro',
-                  };
-                  const color = colors[type] || colors.other;
-                  return (
-                    <div key={type}>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className={`font-medium ${color.text}`}>{labels[type] || type}</span>
-                        <span className="font-bold text-gray-900">{count} <span className="text-gray-500 font-normal">({percentage}%)</span></span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className={`bg-gradient-to-r ${color.gradient} h-2.5 rounded-full transition-all duration-500`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+            <div className="space-y-1.5">
+              {Object.entries(localStats.eventsByType).sort(([,a], [,b]) => b - a).slice(0, 4).map(([type, count]) => {
+                const labels: Record<string, string> = { work: '💼', personal: '🏠', meeting: '👥', reminder: '🔔', other: '📌' };
+                return (
+                  <div key={type} className="flex items-center gap-2 text-xs">
+                    <span>{labels[type] || '📌'}</span>
+                    <span className="flex-1 text-gray-600 capitalize">{type}</span>
+                    <span className="font-bold">{count}</span>
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No hay eventos en este período</p>
-            </div>
+            <p className="text-gray-400 text-xs text-center py-4">Sin eventos</p>
           )}
         </div>
-      </div>
 
-      {/* Tareas por prioridad */}
-      <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-600" />
-          Tareas por Prioridad
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { key: 'urgent', label: 'Urgente', icon: '🔴', bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700' },
-            { key: 'high', label: 'Alta', icon: '🟠', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' },
-            { key: 'medium', label: 'Media', icon: '🟡', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
-            { key: 'low', label: 'Baja', icon: '🟢', bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' },
-          ].map(({ key, label, icon, bg, border, text }) => {
-            const count = localStats?.tasksByPriority[key] || 0;
-            return (
-              <div
-                key={key}
-                className={`${bg} ${border} border-2 p-4 rounded-lg text-center hover:shadow-md transition-shadow`}
-              >
-                <div className="text-3xl mb-2">{icon}</div>
-                <p className="text-3xl font-bold mb-1">{count}</p>
-                <p className={`text-sm font-medium ${text}`}>{label}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Actividad reciente */}
-      <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-teal-600" />
-          Actividad Reciente
-        </h3>
-        {localStats?.recentActivity && localStats.recentActivity.length > 0 ? (
-          <div className="space-y-2">
-            {localStats.recentActivity.map((activity, index) => (
-              <div 
-                key={index} 
-                className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  activity.type === 'event' 
-                    ? 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700' 
-                    : 'bg-gradient-to-br from-green-100 to-green-200 text-green-700'
-                }`}>
-                  {activity.type === 'event' ? <Calendar className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{activity.title}</p>
-                  <p className="text-xs text-gray-500">
-                    {format(activity.date, "d MMM 'a las' HH:mm", { locale: es })}
-                  </p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  activity.type === 'event' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'bg-green-100 text-green-700'
-                }`}>
-                  {activity.type === 'event' ? 'Evento' : 'Tarea'}
-                </span>
+        {/* Prioridad */}
+        <div className="bg-white border border-gray-200 p-3 rounded-lg">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-1">
+            <BarChart3 className="w-4 h-4 text-indigo-600" />
+            Prioridad
+          </h3>
+          <div className="grid grid-cols-4 gap-1">
+            {[
+              { key: 'urgent', icon: '🔴' },
+              { key: 'high', icon: '🟠' },
+              { key: 'medium', icon: '🟡' },
+              { key: 'low', icon: '🟢' },
+            ].map(({ key, icon }) => (
+              <div key={key} className="text-center p-1.5 bg-gray-50 rounded">
+                <div className="text-sm">{icon}</div>
+                <p className="text-lg font-bold">{localStats?.tasksByPriority[key] || 0}</p>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <Activity className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">No hay actividad reciente</p>
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* Sección de Análisis IA */}
+      {/* Botón de Análisis IA - Compacto */}
       {!showAIAnalysis && (
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 p-8 rounded-xl text-center">
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-gradient-to-br from-purple-500 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Brain className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Análisis Inteligente con IA</h3>
-            <p className="text-gray-600 mb-6">
-              Obtén insights personalizados, patrones de productividad y recomendaciones basadas en tus datos usando inteligencia artificial.
-            </p>
-            <button
-              onClick={generateAIAnalytics}
-              disabled={aiLoading}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {aiLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generando análisis...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-5 h-5" />
-                  Generar Análisis con IA
-                </>
-              )}
-            </button>
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 p-3 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Brain className="w-5 h-5 text-purple-600" />
+            <span className="text-sm font-medium text-gray-700">Análisis con IA</span>
           </div>
+          <button
+            onClick={generateAIAnalytics}
+            disabled={aiLoading}
+            className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1.5 rounded hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 flex items-center gap-1"
+          >
+            {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
+            {aiLoading ? 'Analizando...' : 'Generar'}
+          </button>
         </div>
       )}
 
-      {/* Loading de análisis IA */}
+      {/* Loading y resultados IA - Compactos */}
       {aiLoading && showAIAnalysis && (
-        <div className="bg-purple-50 border border-purple-200 p-8 rounded-xl">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
-            <div className="text-center">
-              <p className="text-lg font-semibold text-purple-900 mb-1">Generando análisis con IA...</p>
-              <p className="text-sm text-purple-700">Esto puede tomar unos segundos</p>
-            </div>
-          </div>
+        <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg flex items-center justify-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+          <span className="text-sm text-purple-700">Generando análisis...</span>
         </div>
       )}
 
-      {/* Resultados del análisis IA */}
       {analytics && showAIAnalysis && !aiLoading && (
-        <div className="space-y-6">
-          {/* Puntuación de productividad */}
-          <div className="bg-gradient-to-r from-purple-500 via-purple-600 to-blue-600 text-white p-8 rounded-xl shadow-xl">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <Award className="w-8 h-8" />
-                  <h3 className="text-2xl font-bold">Puntuación de Productividad</h3>
-                </div>
-                <p className="text-purple-100 text-lg">{analytics.summary}</p>
-              </div>
-              <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-6 min-w-[120px] text-center">
-                <div className="text-6xl font-bold">{analytics.productivityScore}</div>
-                <div className="text-sm text-purple-100 mt-1">de 100</div>
-              </div>
+        <div className="space-y-3">
+          {/* Score */}
+          <div className="bg-gradient-to-r from-purple-500 to-blue-600 text-white p-3 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Award className="w-5 h-5" />
+              <span className="text-sm">Productividad</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-purple-100 max-w-xs truncate">{analytics.summary}</span>
+              <span className="text-2xl font-bold">{analytics.productivityScore}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Insights de IA */}
-            {analytics.insights && analytics.insights.length > 0 && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-6 rounded-xl">
-                <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  💡 Insights Detectados
-                </h3>
-                <ul className="space-y-3">
-                  {analytics.insights.map((insight: string, index: number) => (
-                    <li key={index} className="flex items-start gap-3 text-blue-900">
-                      <span className="text-blue-600 text-xl flex-shrink-0">•</span>
-                      <span className="text-sm leading-relaxed">{insight}</span>
-                    </li>
+          {/* Insights y Recomendaciones en grid */}
+          <div className="grid grid-cols-2 gap-2">
+            {analytics.insights?.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 p-2 rounded-lg">
+                <p className="text-xs font-semibold text-blue-800 mb-1">💡 Insights</p>
+                <ul className="text-xs text-blue-700 space-y-0.5">
+                  {analytics.insights.slice(0, 3).map((i: string, idx: number) => (
+                    <li key={idx} className="truncate">• {i}</li>
                   ))}
                 </ul>
               </div>
             )}
-
-            {/* Recomendaciones */}
-            {analytics.recommendations && analytics.recommendations.length > 0 && (
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 p-6 rounded-xl">
-                <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
-                  <Target className="w-5 h-5" />
-                  🎯 Recomendaciones
-                </h3>
-                <ul className="space-y-3">
-                  {analytics.recommendations.map((rec: string, index: number) => (
-                    <li key={index} className="flex items-start gap-3 text-green-900">
-                      <span className="text-green-600 text-xl flex-shrink-0">•</span>
-                      <span className="text-sm leading-relaxed">{rec}</span>
-                    </li>
+            {analytics.recommendations?.length > 0 && (
+              <div className="bg-green-50 border border-green-200 p-2 rounded-lg">
+                <p className="text-xs font-semibold text-green-800 mb-1">🎯 Acciones</p>
+                <ul className="text-xs text-green-700 space-y-0.5">
+                  {analytics.recommendations.slice(0, 3).map((r: string, idx: number) => (
+                    <li key={idx} className="truncate">• {r}</li>
                   ))}
                 </ul>
               </div>
             )}
           </div>
-
-          {/* Patrones identificados */}
-          {analytics.patterns && analytics.patterns.length > 0 && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-6 rounded-xl">
-              <h3 className="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">
-                <TrendingDown className="w-5 h-5" />
-                📊 Patrones Identificados
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {analytics.patterns.map((pattern: string, index: number) => (
-                  <div key={index} className="flex items-start gap-3 bg-white bg-opacity-50 p-3 rounded-lg">
-                    <span className="text-amber-600 text-xl flex-shrink-0">▸</span>
-                    <span className="text-sm text-amber-900 leading-relaxed">{pattern}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Botón regenerar */}
-          <div className="flex justify-center pt-4">
-            <button
-              onClick={generateAIAnalytics}
-              disabled={aiLoading}
-              className="flex items-center gap-2 bg-white border-2 border-purple-300 text-purple-700 px-6 py-3 rounded-lg hover:bg-purple-50 transition-colors disabled:opacity-50 font-medium"
-            >
-              <RefreshCw className="w-5 h-5" />
-              Regenerar Análisis
-            </button>
-          </div>
+          <button onClick={generateAIAnalytics} disabled={aiLoading} className="text-xs text-purple-600 hover:underline flex items-center gap-1 mx-auto">
+            <RefreshCw className="w-3 h-3" /> Regenerar
+          </button>
         </div>
       )}
     </div>

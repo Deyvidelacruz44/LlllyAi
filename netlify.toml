@@ -1,0 +1,8 @@
+# Netlify configuration for Next.js
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Plugin de Next.js para Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -3,6 +3,34 @@ import { NextRequest, NextResponse } from 'next/server';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
+// Función para reintentar peticiones con backoff exponencial
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // Si es error de rate limit (429) o error del servidor (5xx), reintentar
+      if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        console.log(`API rate limited or server error (${response.status}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+      const delay = Math.pow(2, attempt) * 1000;
+      console.log(`Request failed, retrying in ${delay}ms...`, error);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError || new Error('Max retries exceeded');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -10,6 +38,16 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'User ID required' }, { status: 400 });
+    }
+
+    // Verificar que la API key esté configurada
+    if (!GEMINI_API_KEY) {
+      console.warn('GEMINI_API_KEY not configured, using fallback analysis');
+      return NextResponse.json({
+        success: true,
+        analysis: generateFallbackAnalysis(stats),
+        source: 'fallback',
+      });
     }
 
     // Construir el prompt para el análisis
@@ -51,7 +89,7 @@ Enfócate en:
 Responde SOLO con el JSON, sin texto adicional.`;
 
     try {
-      const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      const geminiResponse = await fetchWithRetry(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,7 +104,9 @@ Responde SOLO con el JSON, sin texto adicional.`;
       });
 
       if (!geminiResponse.ok) {
-        throw new Error('Gemini API error');
+        const errorBody = await geminiResponse.text();
+        console.error(`Gemini API error (${geminiResponse.status}):`, errorBody);
+        throw new Error(`Gemini API error: ${geminiResponse.status}`);
       }
 
       const geminiData = await geminiResponse.json();
@@ -98,6 +138,7 @@ Responde SOLO con el JSON, sin texto adicional.`;
       return NextResponse.json({
         success: true,
         analysis,
+        source: 'gemini',
       });
 
     } catch (aiError) {
@@ -109,6 +150,8 @@ Responde SOLO con el JSON, sin texto adicional.`;
       return NextResponse.json({
         success: true,
         analysis: fallbackAnalysis,
+        source: 'fallback',
+        reason: aiError instanceof Error ? aiError.message : 'Unknown error',
       });
     }
 

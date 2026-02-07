@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agenda-ai-v2';
+const CACHE_NAME = 'agenda-ai-v3';
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
@@ -10,6 +10,9 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/favicon.svg',
   '/icon-192.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png',
 ];
 
 // Install event - cache static assets

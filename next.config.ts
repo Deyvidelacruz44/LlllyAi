@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Optimizaciones para producción
   poweredByHeader: false, // Oculta el header X-Powered-By por seguridad
   
+  // Permitir orígenes en desarrollo (para acceso desde móvil u otros dispositivos)
+  allowedDevOrigins: ['10.0.0.5', 'localhost', '127.0.0.1'],
+  
   // Compresión de imágenes
   images: {
     formats: ['image/avif', 'image/webp'],

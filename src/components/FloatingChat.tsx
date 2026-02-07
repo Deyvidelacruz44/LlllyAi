@@ -524,35 +524,37 @@ export default function FloatingChat() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all hover:scale-110 z-50 group"
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-2xl shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 hover:scale-110 z-50 group animate-fade-in"
         title="Abrir Chat IA"
       >
-        <MessageSquare className="w-6 h-6" />
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+        <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
+        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-bounce-soft">
           <Sparkles className="w-3 h-3" />
         </span>
+        {/* Pulse effect */}
+        <span className="absolute inset-0 rounded-2xl bg-purple-500 animate-ping opacity-20"></span>
       </button>
     );
   }
 
   if (isMinimized) {
     return (
-      <div className="fixed bottom-6 right-6 bg-white rounded-lg shadow-2xl z-50 border border-gray-200">
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
+      <div className="fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 animate-scale-in overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-5 h-5 animate-pulse-soft" />
             <span className="font-semibold">Asistente IA</span>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setIsMinimized(false)}
-              className="p-1 hover:bg-white/20 rounded transition-colors"
+              className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
             >
               <Maximize2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white/20 rounded transition-colors"
+              className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
             >
               ×
             </button>
@@ -563,18 +565,23 @@ export default function FloatingChat() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-xl shadow-2xl z-50 flex flex-col border border-gray-200">
+    <div className="fixed bottom-6 right-6 w-[380px] h-[600px] bg-white rounded-2xl shadow-2xl shadow-purple-500/10 z-50 flex flex-col border border-gray-100 animate-scale-in overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-xl">
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 text-white">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 animate-pulse" />
-          <span className="font-semibold">Asistente IA</span>
+          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+            <Sparkles className="w-5 h-5 animate-pulse-soft" />
+          </div>
+          <div>
+            <span className="font-semibold block text-sm">Asistente IA</span>
+            <span className="text-[10px] text-white/70">Siempre listo para ayudarte</span>
+          </div>
         </div>
-        <div className="flex gap-2">
-          {chats.length > 1 && (
+        <div className="flex gap-1">
+          {chats.length > 0 && (
             <button
               onClick={() => setShowChatsList(!showChatsList)}
-              className="p-1 hover:bg-white/20 rounded transition-colors"
+              className={`p-2 rounded-lg transition-colors ${showChatsList ? 'bg-white/30' : 'hover:bg-white/20'}`}
               title="Ver conversaciones"
             >
               <MessageSquare className="w-4 h-4" />
@@ -582,14 +589,14 @@ export default function FloatingChat() {
           )}
           <button
             onClick={() => setIsMinimized(true)}
-            className="p-1 hover:bg-white/20 rounded transition-colors"
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             title="Minimizar"
           >
             <Minimize2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1 hover:bg-white/20 rounded transition-colors text-xl leading-none"
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             title="Cerrar"
           >
             ×
@@ -599,12 +606,12 @@ export default function FloatingChat() {
 
       {/* Chats List */}
       {showChatsList && (
-        <div className="border-b border-gray-200 bg-gray-50 p-2 max-h-48 overflow-y-auto">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-600">Conversaciones</span>
+        <div className="border-b border-gray-100 bg-gray-50/80 backdrop-blur p-3 max-h-48 overflow-y-auto animate-fade-in-down">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Conversaciones</span>
             <button
               onClick={createNewChat}
-              className="text-xs bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700"
+              className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1.5 rounded-lg hover:shadow-md transition-all active:scale-95"
             >
               + Nueva
             </button>
@@ -613,24 +620,26 @@ export default function FloatingChat() {
             {chats.map((chat) => (
               <div
                 key={chat.id}
-                className={`flex items-center justify-between p-2 rounded cursor-pointer ${
-                  currentChatId === chat.id ? 'bg-purple-100' : 'hover:bg-gray-100'
+                className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all ${
+                  currentChatId === chat.id 
+                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200' 
+                    : 'hover:bg-white hover:shadow-sm border border-transparent'
                 }`}
                 onClick={() => {
                   setCurrentChatId(chat.id);
                   setShowChatsList(false);
                 }}
               >
-                <span className="text-sm truncate flex-1">{chat.title}</span>
+                <span className="text-sm truncate flex-1 text-gray-700">{chat.title}</span>
                 {chats.length > 1 && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteChat(chat.id);
                     }}
-                    className="p-1 hover:bg-red-100 text-red-600 rounded"
+                    className="p-1.5 hover:bg-red-100 text-red-500 rounded-lg transition-colors ml-2"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -640,35 +649,57 @@ export default function FloatingChat() {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50/50 to-white">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 mt-8">
-            <Sparkles className="w-12 h-12 mx-auto mb-3 text-purple-300" />
-            <p className="text-sm mb-2">¡Hola! Soy tu asistente IA</p>
-            <p className="text-xs text-gray-400">Pregúntame sobre tu agenda o pídeme crear eventos y tareas</p>
+          <div className="text-center text-gray-500 mt-12 animate-fade-in">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-purple-500" />
+            </div>
+            <p className="font-medium text-gray-700 mb-1">¡Hola! Soy tu asistente IA</p>
+            <p className="text-sm text-gray-400 max-w-[200px] mx-auto">Pregúntame sobre tu agenda o pídeme crear eventos y tareas</p>
+            
+            {/* Quick suggestions */}
+            <div className="mt-6 space-y-2">
+              <p className="text-xs text-gray-400 mb-2">Prueba diciendo:</p>
+              {[
+                "¿Qué tengo para hoy?",
+                "Crea una reunión mañana a las 3pm",
+                "Agregar tarea: Comprar víveres"
+              ].map((suggestion, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInput(suggestion)}
+                  className="block w-full text-left text-xs px-3 py-2 bg-white rounded-lg border border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-purple-50 transition-all"
+                >
+                  "{suggestion}"
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
-          messages.map((msg) => (
+          messages.map((msg, index) => (
             <div
               key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+              style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
                   msg.role === 'user'
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-900'
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-br-md'
+                    : 'bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-md'
                 }`}
               >
                 {msg.actionExecuted && (
-                  <div className="flex items-center gap-1 text-xs mb-1 opacity-80">
+                  <div className={`flex items-center gap-1.5 text-xs mb-1.5 ${msg.role === 'user' ? 'text-white/80' : 'text-green-600'}`}>
+                    <CheckCircle className="w-3.5 h-3.5" />
                     {msg.actionType === 'event' && <Calendar className="w-3 h-3" />}
                     {msg.actionType === 'task' && <ListTodo className="w-3 h-3" />}
-                    {msg.actionType === 'event' ? 'Evento' : 'Tarea'} creada
+                    <span>{msg.actionType === 'event' ? 'Evento creado' : 'Tarea creada'}</span>
                   </div>
                 )}
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                <p className="text-xs opacity-70 mt-1">
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                <p className={`text-[10px] mt-1.5 ${msg.role === 'user' ? 'text-white/60' : 'text-gray-400'}`}>
                   {format(msg.timestamp, 'HH:mm')}
                 </p>
               </div>
@@ -676,9 +707,12 @@ export default function FloatingChat() {
           ))
         )}
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg px-3 py-2">
-              <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
+          <div className="flex justify-start animate-fade-in">
+            <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                <span className="text-sm text-gray-500">Pensando...</span>
+              </div>
             </div>
           </div>
         )}
@@ -686,7 +720,7 @@ export default function FloatingChat() {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-gray-200">
+      <div className="p-3 border-t border-gray-100 bg-white">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -699,13 +733,13 @@ export default function FloatingChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe tu mensaje..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+            className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:bg-white text-sm transition-all placeholder:text-gray-400"
             disabled={loading}
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-2 rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all active:scale-95"
           >
             <Send className="w-5 h-5" />
           </button>
