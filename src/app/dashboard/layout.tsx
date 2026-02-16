@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <h1 className="text-xl font-bold bg-brand-navy bg-clip-text text-transparent">
-                  Agenda AI
+                  Lilly AI
                 </h1>
               </div>
               <button
@@ -247,7 +247,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="p-4 border-t border-gray-100">
               <div className="p-4 bg-brand-navy/5 rounded-xl">
                 <p className="text-xs text-gray-600 mb-1">Versión Beta</p>
-                <p className="text-xs text-gray-500">Agenda AI Personal</p>
+                <p className="text-xs text-gray-500">Lilly AI</p>
               </div>
             </div>
           </div>

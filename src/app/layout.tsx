@@ -15,17 +15,17 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://agenda-ai.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://lilly-ia.netlify.app'),
   title: {
-    default: "Agenda AI Personal",
-    template: "%s | Agenda AI",
+    default: "Lilly AI",
+    template: "%s | Lilly AI",
   },
-  description: "Agenda personal inteligente con asistente IA, gestión de tareas, calendario y análisis de productividad. Organiza tu vida con inteligencia artificial.",
+  description: "Asistente personal inteligente con IA, gestión de tareas, calendario y análisis de productividad. Organiza tu vida con inteligencia artificial.",
   manifest: "/manifest.json",
-  keywords: ["agenda", "productividad", "IA", "tareas", "calendario", "organización", "inteligencia artificial"],
-  authors: [{ name: "Agenda AI Team" }],
-  creator: "Agenda AI",
-  publisher: "Agenda AI",
+  keywords: ["lilly", "productividad", "IA", "tareas", "calendario", "organización", "inteligencia artificial"],
+  authors: [{ name: "Lilly AI Team" }],
+  creator: "Lilly AI",
+  publisher: "Lilly AI",
   robots: {
     index: true,
     follow: true,
@@ -33,29 +33,29 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_ES",
-    url: "https://agenda-ai.vercel.app",
-    siteName: "Agenda AI Personal",
-    title: "Agenda AI Personal - Tu asistente inteligente",
+    url: "https://lilly-ia.netlify.app",
+    siteName: "Lilly AI",
+    title: "Lilly AI - Tu asistente inteligente",
     description: "Organiza tu vida con inteligencia artificial. Gestión de tareas, calendario y análisis de productividad.",
     images: [
       {
         url: "/icon-192.svg",
         width: 192,
         height: 192,
-        alt: "Agenda AI Logo",
+        alt: "Lilly AI Logo",
       },
     ],
   },
   twitter: {
     card: "summary",
-    title: "Agenda AI Personal",
-    description: "Agenda personal inteligente con asistente IA",
+    title: "Lilly AI",
+    description: "Asistente personal inteligente con IA",
     images: ["/icon-192.svg"],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Agenda AI",
+    title: "Lilly AI",
   },
   formatDetection: {
     telephone: false,

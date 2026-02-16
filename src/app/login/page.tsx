@@ -65,7 +65,7 @@ export default function LoginPage() {
               <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-navy via-brand-navy to-brand-blue bg-clip-text text-transparent mb-2">
-              Agenda AI Personal
+              Lilly AI
             </h1>
             <p className="text-gray-500">
               {isSignUp ? 'Crea tu cuenta para comenzar' : 'Bienvenido de vuelta'}
@@ -205,7 +205,7 @@ export default function LoginPage() {
 
         {/* Footer text */}
         <p className="text-center text-xs text-gray-400 mt-6">
-          Tu agenda inteligente con asistente IA
+          Tu asistente inteligente con IA
         </p>
       </div>
     </div>

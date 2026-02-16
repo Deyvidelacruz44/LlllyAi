@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agenda-ai-v3';
+const CACHE_NAME = 'lilly-ai-v1';
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
@@ -97,7 +97,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Agenda AI', options)
+    self.registration.showNotification(data.title || 'Lilly AI', options)
   );
 });
 

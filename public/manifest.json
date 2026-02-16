@@ -1,7 +1,7 @@
 {
-  "name": "Agenda AI Personal",
-  "short_name": "Agenda AI",
-  "description": "Agenda personal inteligente con asistente IA y análisis de métricas",
+  "name": "Lilly AI",
+  "short_name": "Lilly AI",
+  "description": "Asistente personal inteligente con IA y análisis de métricas",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
