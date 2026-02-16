@@ -76,7 +76,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       case 'warning':
         return 'bg-gradient-to-r from-yellow-500 to-orange-500 shadow-yellow-500/25';
       case 'info':
-        return 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/25';
+        return 'bg-gradient-to-r from-brand-navy to-brand-blue shadow-brand-navy/25';
     }
   };
 

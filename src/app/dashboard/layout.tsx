@@ -29,10 +29,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [userMenuOpen]);
 
   const navigation = [
-    { name: 'Panel', href: '/dashboard/overview', icon: LayoutDashboard, color: 'text-blue-600' },
-    { name: 'Calendario', href: '/dashboard/calendar', icon: Calendar, color: 'text-purple-600' },
-    { name: 'Tareas', href: '/dashboard/tasks', icon: CheckSquare, color: 'text-green-600' },
-    { name: 'Métricas IA', href: '/dashboard/analytics', icon: BarChart3, color: 'text-orange-600' },
+    { name: 'Panel', href: '/dashboard/overview', icon: LayoutDashboard, color: 'text-brand-navy' },
+    { name: 'Calendario', href: '/dashboard/calendar', icon: Calendar, color: 'text-brand-blue' },
+    { name: 'Tareas', href: '/dashboard/tasks', icon: CheckSquare, color: 'text-brand-navy' },
+    { name: 'Métricas IA', href: '/dashboard/analytics', icon: BarChart3, color: 'text-brand-orange' },
   ];
 
   const financeSubItems = [
@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-brand-blue/5">
         {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
           <div
@@ -79,10 +79,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl shadow-lg">
+                <div className="bg-gradient-to-r from-brand-navy to-brand-blue p-2 rounded-xl shadow-lg">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-brand-navy to-brand-blue bg-clip-text text-transparent">
                   Agenda AI
                 </h1>
               </div>
@@ -103,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   setUserMenuOpen(!userMenuOpen);
                 }}
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-lg">
                     {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                   </span>
@@ -143,21 +143,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                       isActive
-                        ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-700 shadow-sm border border-blue-100'
+                        ? 'bg-gradient-to-r from-brand-navy/10 to-brand-blue/10 text-brand-navy shadow-sm border border-brand-blue/30'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className={`p-2 rounded-lg transition-all ${
                       isActive 
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md' 
+                        ? 'bg-gradient-to-r from-brand-navy to-brand-blue text-white shadow-md' 
                         : 'bg-gray-100 group-hover:bg-gray-200'
                     }`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="font-medium">{item.name}</span>
                     {isActive && (
-                      <div className="ml-auto w-1.5 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
+                      <div className="ml-auto w-1.5 h-6 bg-gradient-to-b from-brand-navy to-brand-blue rounded-full" />
                     )}
                   </Link>
                 );
@@ -169,19 +169,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   onClick={() => setFinanceOpen(!financeOpen)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                     isFinanceActive
-                      ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-700 shadow-sm border border-emerald-100'
+                      ? 'bg-gradient-to-r from-brand-orange/10 to-brand-orange/5 text-brand-orange shadow-sm border border-brand-orange/20'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
                   <div className={`p-2 rounded-lg transition-all ${
                     isFinanceActive
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                      ? 'bg-gradient-to-r from-brand-orange to-[#ffc857] text-white shadow-md'
                       : 'bg-gray-100 group-hover:bg-gray-200'
                   }`}>
                     <Wallet className="w-4 h-4" />
                   </div>
                   <span className="font-medium">Finanzas</span>
-                  <ChevronDown className={`ml-auto w-4 h-4 transition-transform duration-200 ${financeOpen ? 'rotate-180' : ''} ${isFinanceActive ? 'text-emerald-500' : 'text-gray-400'}`} />
+                  <ChevronDown className={`ml-auto w-4 h-4 transition-transform duration-200 ${financeOpen ? 'rotate-180' : ''} ${isFinanceActive ? 'text-brand-orange' : 'text-gray-400'}`} />
                 </button>
 
                 {financeOpen && (
@@ -196,14 +196,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           onClick={() => setSidebarOpen(false)}
                           className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                             isSubActive
-                              ? 'bg-emerald-50 text-emerald-700 font-medium'
+                              ? 'bg-brand-orange/10 text-brand-orange font-medium'
                               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                           }`}
                         >
-                          <SubIcon className={`w-4 h-4 ${isSubActive ? 'text-emerald-600' : 'text-gray-400'}`} />
+                          <SubIcon className={`w-4 h-4 ${isSubActive ? 'text-brand-orange' : 'text-gray-400'}`} />
                           <span>{sub.name}</span>
                           {isSubActive && (
-                            <div className="ml-auto w-1 h-4 bg-emerald-500 rounded-full" />
+                            <div className="ml-auto w-1 h-4 bg-brand-orange rounded-full" />
                           )}
                         </Link>
                       );
@@ -222,21 +222,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                       isActive
-                        ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-700 shadow-sm border border-blue-100'
+                        ? 'bg-gradient-to-r from-brand-navy/10 to-brand-blue/10 text-brand-navy shadow-sm border border-brand-blue/30'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                     style={{ animationDelay: `${(index + 4) * 50}ms` }}
                   >
                     <div className={`p-2 rounded-lg transition-all ${
                       isActive 
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md' 
+                        ? 'bg-gradient-to-r from-brand-navy to-brand-blue text-white shadow-md' 
                         : 'bg-gray-100 group-hover:bg-gray-200'
                     }`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="font-medium">{item.name}</span>
                     {isActive && (
-                      <div className="ml-auto w-1.5 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
+                      <div className="ml-auto w-1.5 h-6 bg-gradient-to-b from-brand-navy to-brand-blue rounded-full" />
                     )}
                   </Link>
                 );
@@ -245,7 +245,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Bottom section */}
             <div className="p-4 border-t border-gray-100">
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
+              <div className="p-4 bg-gradient-to-r from-brand-navy/5 to-brand-blue/10 rounded-xl">
                 <p className="text-xs text-gray-600 mb-1">Versión Beta</p>
                 <p className="text-xs text-gray-500">Agenda AI Personal</p>
               </div>
@@ -277,7 +277,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               
               {/* Mobile user avatar */}
               <div className="lg:hidden">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold">
                     {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                   </span>

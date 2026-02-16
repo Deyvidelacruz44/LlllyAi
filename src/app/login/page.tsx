@@ -48,23 +48,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-blue/10 via-white to-brand-navy/5 px-4 py-8">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-soft"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-soft" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-soft" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-brand-blue rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-soft"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-brand-navy rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse-soft" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-orange rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse-soft" style={{ animationDelay: '2s' }}></div>
       </div>
 
       <div className="relative max-w-md w-full">
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-indigo-500/10 p-8 border border-white/50 animate-fade-in-up">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-brand-navy/10 p-8 border border-white/50 animate-fade-in-up">
           {/* Logo & Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/30 animate-bounce-soft">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-navy to-brand-blue rounded-2xl mb-4 shadow-lg shadow-brand-navy/30 animate-bounce-soft">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-navy via-brand-navy to-brand-blue bg-clip-text text-transparent mb-2">
               Agenda AI Personal
             </h1>
             <p className="text-gray-500">
@@ -97,7 +97,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all duration-200 placeholder:text-gray-400"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue focus:bg-white transition-all duration-200 placeholder:text-gray-400"
                   placeholder="tu@email.com"
                 />
               </div>
@@ -117,7 +117,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all duration-200 placeholder:text-gray-400"
+                  className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue focus:bg-white transition-all duration-200 placeholder:text-gray-400"
                   placeholder="••••••••"
                 />
                 <button
@@ -134,7 +134,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3.5 px-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98] flex items-center justify-center gap-2 group"
+              className="w-full bg-gradient-to-r from-brand-navy to-brand-blue text-white py-3.5 px-4 rounded-xl hover:from-[#1a1870] hover:to-[#7bb8f0] transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-navy/25 hover:shadow-xl hover:shadow-brand-navy/30 active:scale-[0.98] flex items-center justify-center gap-2 group"
             >
               {loading ? (
                 <>
@@ -196,7 +196,7 @@ export default function LoginPage() {
                 setIsSignUp(!isSignUp);
                 setError('');
               }}
-              className="text-blue-600 hover:text-purple-600 font-semibold transition-colors"
+              className="text-brand-navy hover:text-brand-blue font-semibold transition-colors"
             >
               {isSignUp ? 'Inicia sesión' : 'Regístrate gratis'}
             </button>

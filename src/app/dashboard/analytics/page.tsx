@@ -392,7 +392,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-36 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl animate-pulse" />
+        <div className="h-36 bg-gradient-to-r from-brand-navy to-brand-blue rounded-2xl animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />)}
         </div>
@@ -410,7 +410,7 @@ export default function AnalyticsPage() {
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error al cargar métricas</h3>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button onClick={loadAllStats} className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+          <button onClick={loadAllStats} className="px-6 py-3 bg-brand-navy text-white rounded-lg hover:bg-[#1a1870] transition-colors">
             Reintentar
           </button>
         </div>
@@ -423,7 +423,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-4">
       {/* ===== GRADIENT HEADER ===== */}
-      <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue rounded-2xl p-5 text-white shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
@@ -431,7 +431,7 @@ export default function AnalyticsPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold">Métricas IA</h1>
-              <p className="text-violet-200 text-sm">Visión integral de tu productividad y finanzas</p>
+              <p className="text-white/70 text-sm">Visión integral de tu productividad y finanzas</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -460,38 +460,38 @@ export default function AnalyticsPage() {
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle className="w-4 h-4 text-green-300" />
-              <span className="text-xs text-violet-200">Productividad</span>
+              <span className="text-xs text-white/70">Productividad</span>
             </div>
             <p className="text-2xl font-bold">{localStats?.completionRate || 0}%</p>
-            <p className="text-[10px] text-violet-300">{localStats?.completedTasks || 0}/{localStats?.totalTasks || 0} tareas</p>
+            <p className="text-[10px] text-white/60">{localStats?.completedTasks || 0}/{localStats?.totalTasks || 0} tareas</p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-4 h-4 text-emerald-300" />
-              <span className="text-xs text-violet-200">Balance mes</span>
+              <span className="text-xs text-white/70">Balance mes</span>
             </div>
             <p className={`text-2xl font-bold ${(financeStats?.balance || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
               {formatCurrency(financeStats?.balance || 0)}
             </p>
-            <p className="text-[10px] text-violet-300">Ahorro: {financeStats?.savingsRate || 0}%</p>
+            <p className="text-[10px] text-white/60">Ahorro: {financeStats?.savingsRate || 0}%</p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Calendar className="w-4 h-4 text-blue-300" />
-              <span className="text-xs text-violet-200">Eventos</span>
+              <Calendar className="w-4 h-4 text-brand-blue" />
+              <span className="text-xs text-white/70">Eventos</span>
             </div>
             <p className="text-2xl font-bold">{localStats?.totalEvents || 0}</p>
-            <p className="text-[10px] text-violet-300">Hoy: {localStats?.todayEvents || 0} · Semana: {localStats?.thisWeekEvents || 0}</p>
+            <p className="text-[10px] text-white/60">Hoy: {localStats?.todayEvents || 0} · Semana: {localStats?.thisWeekEvents || 0}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <AlertCircle className="w-4 h-4 text-orange-300" />
-              <span className="text-xs text-violet-200">Alertas</span>
+              <span className="text-xs text-white/70">Alertas</span>
             </div>
             <p className="text-2xl font-bold text-orange-300">
               {(localStats?.overdueTasks || 0) + (financeStats?.overdueDebts || 0) + (financeStats?.overdueReceivables || 0)}
             </p>
-            <p className="text-[10px] text-violet-300">
+            <p className="text-[10px] text-white/60">
               Tareas: {localStats?.overdueTasks || 0} · Deudas: {financeStats?.overdueDebts || 0}
             </p>
           </div>
@@ -503,7 +503,7 @@ export default function AnalyticsPage() {
         <button
           onClick={() => setActiveTab('general')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-            activeTab === 'general' ? 'bg-white text-violet-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            activeTab === 'general' ? 'bg-white text-brand-navy shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <ListTodo className="w-4 h-4" />
@@ -512,7 +512,7 @@ export default function AnalyticsPage() {
         <button
           onClick={() => setActiveTab('finanzas')}
           className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-            activeTab === 'finanzas' ? 'bg-white text-violet-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            activeTab === 'finanzas' ? 'bg-white text-brand-navy shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <Wallet className="w-4 h-4" />
@@ -527,13 +527,13 @@ export default function AnalyticsPage() {
             {/* Tasks breakdown */}
             <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="bg-blue-100 p-1 rounded-lg"><Target className="w-4 h-4 text-blue-600" /></div>
+                <div className="bg-brand-blue/20 p-1 rounded-lg"><Target className="w-4 h-4 text-brand-navy" /></div>
                 Estado de Tareas
               </h3>
               <div className="space-y-2.5">
                 {[
                   { label: 'Completadas', count: localStats?.completedTasks || 0, bg: 'bg-emerald-500' },
-                  { label: 'En progreso', count: localStats?.inProgressTasks || 0, bg: 'bg-blue-500' },
+                  { label: 'En progreso', count: localStats?.inProgressTasks || 0, bg: 'bg-brand-blue' },
                   { label: 'Pendientes', count: localStats?.pendingTasks || 0, bg: 'bg-amber-500' },
                   { label: 'Vencidas', count: localStats?.overdueTasks || 0, bg: 'bg-red-500' },
                 ].map(item => (
@@ -556,7 +556,7 @@ export default function AnalyticsPage() {
             {/* Events by type */}
             <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="bg-purple-100 p-1 rounded-lg"><Calendar className="w-4 h-4 text-purple-600" /></div>
+                <div className="bg-brand-blue/20 p-1 rounded-lg"><Calendar className="w-4 h-4 text-brand-navy" /></div>
                 Eventos por Tipo
               </h3>
               {localStats?.eventsByType && Object.keys(localStats.eventsByType).length > 0 ? (
@@ -584,14 +584,14 @@ export default function AnalyticsPage() {
               )}
               <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs">
                 <span className="text-gray-500">Próximos</span>
-                <span className="font-bold text-purple-600">{localStats?.upcomingEvents || 0}</span>
+                <span className="font-bold text-brand-navy">{localStats?.upcomingEvents || 0}</span>
               </div>
             </div>
 
             {/* Priority */}
             <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="bg-indigo-100 p-1 rounded-lg"><BarChart3 className="w-4 h-4 text-indigo-600" /></div>
+                <div className="bg-brand-navy/10 p-1 rounded-lg"><BarChart3 className="w-4 h-4 text-brand-navy" /></div>
                 Prioridad de Tareas
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -609,7 +609,7 @@ export default function AnalyticsPage() {
                 ))}
               </div>
               <div className="mt-3 pt-3 border-t border-gray-100 text-xs flex items-center gap-2">
-                <MessageSquare className="w-3 h-3 text-purple-500" />
+                <MessageSquare className="w-3 h-3 text-brand-navy" />
                 <span className="text-gray-500 flex-1">Chats IA</span>
                 <span className="font-bold">{localStats?.totalConversations || 0}</span>
                 <span className="text-gray-400">({localStats?.actionsFromChat || 0} acciones)</span>
@@ -661,18 +661,18 @@ export default function AnalyticsPage() {
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-2">
-                <div className="bg-violet-100 p-1.5 rounded-lg"><CreditCard className="w-4 h-4 text-violet-600" /></div>
+                <div className="bg-brand-navy/10 p-1.5 rounded-lg"><CreditCard className="w-4 h-4 text-brand-navy" /></div>
                 <span className="text-xs text-gray-500">Obligaciones</span>
               </div>
-              <p className="text-lg font-bold text-violet-600">{formatCurrency(financeStats?.totalMonthlyObligations || 0)}</p>
+              <p className="text-lg font-bold text-brand-navy">{formatCurrency(financeStats?.totalMonthlyObligations || 0)}</p>
               <p className="text-[10px] text-gray-400 mt-1">Fijos + Deudas/mes</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-2">
-                <div className="bg-blue-100 p-1.5 rounded-lg"><HandCoins className="w-4 h-4 text-blue-600" /></div>
+                <div className="bg-brand-blue/20 p-1.5 rounded-lg"><HandCoins className="w-4 h-4 text-brand-navy" /></div>
                 <span className="text-xs text-gray-500">Por cobrar</span>
               </div>
-              <p className="text-lg font-bold text-blue-600">{formatCurrency(financeStats?.totalPendingReceivables || 0)}</p>
+              <p className="text-lg font-bold text-brand-navy">{formatCurrency(financeStats?.totalPendingReceivables || 0)}</p>
               <p className="text-[10px] text-gray-400 mt-1">{financeStats?.activeReceivables || 0} activas</p>
             </div>
           </div>
@@ -799,12 +799,12 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
-                  <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1.5">Cuentas por Cobrar</p>
+                <div className="bg-brand-blue/10 rounded-lg p-2.5 border border-brand-blue/20">
+                  <p className="text-[10px] font-semibold text-brand-navy uppercase tracking-wider mb-1.5">Cuentas por Cobrar</p>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600">Pendiente</span>
-                      <span className="font-bold text-blue-700">{formatCurrency(financeStats?.totalPendingReceivables || 0)}</span>
+                      <span className="font-bold text-brand-navy">{formatCurrency(financeStats?.totalPendingReceivables || 0)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600">Cobrado total</span>
@@ -830,7 +830,7 @@ export default function AnalyticsPage() {
           {financeStats?.dailySpending && financeStats.dailySpending.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="bg-indigo-100 p-1 rounded-lg"><BarChart3 className="w-4 h-4 text-indigo-600" /></div>
+                <div className="bg-brand-navy/10 p-1 rounded-lg"><BarChart3 className="w-4 h-4 text-brand-navy" /></div>
                 Gasto e Ingreso Diario
                 <span className="text-xs font-normal text-gray-400 ml-auto">{format(new Date(), 'MMMM yyyy', { locale: es })}</span>
               </h3>
@@ -896,10 +896,10 @@ export default function AnalyticsPage() {
 
       {/* ===== AI ANALYSIS (both tabs) ===== */}
       {!showAIAnalysis && (
-        <div className="bg-gradient-to-r from-violet-50 via-purple-50 to-indigo-50 border border-violet-200 p-4 rounded-xl flex items-center justify-between">
+        <div className="bg-gradient-to-r from-brand-navy/5 via-brand-blue/10 to-brand-navy/5 border border-brand-blue/30 p-4 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-violet-100 p-2 rounded-xl">
-              <Brain className="w-5 h-5 text-violet-600" />
+            <div className="bg-brand-navy/10 p-2 rounded-xl">
+              <Brain className="w-5 h-5 text-brand-navy" />
             </div>
             <div>
               <span className="text-sm font-medium text-gray-700">Análisis Inteligente</span>
@@ -909,7 +909,7 @@ export default function AnalyticsPage() {
           <button
             onClick={generateAIAnalytics}
             disabled={aiLoading}
-            className="text-xs bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-violet-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+            className="text-xs bg-gradient-to-r from-brand-navy to-brand-blue text-white px-4 py-2 rounded-lg hover:from-[#1a1870] hover:to-[#7bb8f0] transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
           >
             {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
             {aiLoading ? 'Analizando...' : 'Generar Análisis'}
@@ -918,29 +918,29 @@ export default function AnalyticsPage() {
       )}
 
       {aiLoading && showAIAnalysis && (
-        <div className="bg-violet-50 border border-violet-200 p-6 rounded-xl flex items-center justify-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-violet-600" />
-          <span className="text-sm text-violet-700">Analizando productividad y finanzas...</span>
+        <div className="bg-brand-navy/5 border border-brand-blue/30 p-6 rounded-xl flex items-center justify-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-brand-navy" />
+          <span className="text-sm text-brand-navy">Analizando productividad y finanzas...</span>
         </div>
       )}
 
       {analytics && showAIAnalysis && !aiLoading && (
         <div className="space-y-3">
           {/* Score */}
-          <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white p-4 rounded-xl shadow-lg">
+          <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue text-white p-4 rounded-xl shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
                   <Award className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-violet-200">Puntuación General</p>
-                  <p className="text-sm text-violet-100 max-w-md">{analytics.summary}</p>
+                  <p className="text-xs text-white/70">Puntuación General</p>
+                  <p className="text-sm text-white/80 max-w-md">{analytics.summary}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-4xl font-bold">{analytics.productivityScore}</p>
-                <p className="text-[10px] text-violet-200">/ 100</p>
+                <p className="text-[10px] text-white/70">/ 100</p>
               </div>
             </div>
           </div>
@@ -948,14 +948,14 @@ export default function AnalyticsPage() {
           {/* Insights, Recommendations, Patterns */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {analytics.insights?.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl">
-                <p className="text-xs font-semibold text-blue-800 mb-2 flex items-center gap-1">
+              <div className="bg-brand-blue/10 border border-brand-blue/30 p-3 rounded-xl">
+                <p className="text-xs font-semibold text-brand-navy mb-2 flex items-center gap-1">
                   <Zap className="w-3.5 h-3.5" /> Insights
                 </p>
-                <ul className="text-xs text-blue-700 space-y-1.5">
+                <ul className="text-xs text-brand-navy/80 space-y-1.5">
                   {analytics.insights.map((i: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-1.5">
-                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span className="text-brand-blue mt-0.5">•</span>
                       <span>{i}</span>
                     </li>
                   ))}
@@ -978,14 +978,14 @@ export default function AnalyticsPage() {
               </div>
             )}
             {analytics.patterns?.length > 0 && (
-              <div className="bg-purple-50 border border-purple-200 p-3 rounded-xl">
-                <p className="text-xs font-semibold text-purple-800 mb-2 flex items-center gap-1">
+              <div className="bg-brand-orange/10 border border-brand-orange/20 p-3 rounded-xl">
+                <p className="text-xs font-semibold text-brand-navy mb-2 flex items-center gap-1">
                   <Activity className="w-3.5 h-3.5" /> Patrones
                 </p>
-                <ul className="text-xs text-purple-700 space-y-1.5">
+                <ul className="text-xs text-brand-navy/80 space-y-1.5">
                   {analytics.patterns.map((p: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-1.5">
-                      <span className="text-purple-400 mt-0.5">•</span>
+                      <span className="text-brand-orange mt-0.5">•</span>
                       <span>{p}</span>
                     </li>
                   ))}
@@ -1011,7 +1011,7 @@ export default function AnalyticsPage() {
             </div>
           )}
 
-          <button onClick={generateAIAnalytics} disabled={aiLoading} className="text-xs text-violet-600 hover:underline flex items-center gap-1 mx-auto py-1">
+          <button onClick={generateAIAnalytics} disabled={aiLoading} className="text-xs text-brand-navy hover:underline flex items-center gap-1 mx-auto py-1">
             <RefreshCw className="w-3 h-3" /> Regenerar análisis
           </button>
         </div>

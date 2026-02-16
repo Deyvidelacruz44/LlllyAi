@@ -1179,7 +1179,7 @@ export default function FloatingChat() {
               autoStartVoiceRef.current = true;
               setIsOpen(true);
             }}
-            className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-3.5 rounded-2xl shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 hover:scale-110 active:scale-95 group"
+            className="bg-gradient-to-r from-brand-navy to-brand-blue text-white p-3.5 rounded-2xl shadow-xl shadow-brand-navy/25 hover:shadow-brand-navy/40 transition-all duration-300 hover:scale-110 active:scale-95 group"
             title="Hablar con IA"
           >
             <Phone className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -1188,14 +1188,14 @@ export default function FloatingChat() {
         {/* Chat button */}
         <button
           onClick={() => setIsOpen(true)}
-          className="relative bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-2xl shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 hover:scale-110 group"
+          className="relative bg-gradient-to-r from-brand-navy to-brand-blue text-white p-4 rounded-2xl shadow-2xl shadow-brand-navy/30 hover:shadow-brand-navy/50 transition-all duration-300 hover:scale-110 group"
           title="Abrir Chat IA"
         >
           <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
           <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-bounce-soft">
             <Sparkles className="w-3 h-3" />
           </span>
-          <span className="absolute inset-0 rounded-2xl bg-purple-500 animate-ping opacity-20"></span>
+          <span className="absolute inset-0 rounded-2xl bg-brand-blue animate-ping opacity-20"></span>
         </button>
       </div>
     );
@@ -1204,7 +1204,7 @@ export default function FloatingChat() {
   if (isMinimized) {
     return (
       <div className="fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 animate-scale-in overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-brand-navy to-brand-blue text-white">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 animate-pulse-soft" />
             <span className="font-semibold">Asistente IA</span>
@@ -1229,9 +1229,9 @@ export default function FloatingChat() {
   }
 
   return (
-    <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 w-full h-full sm:w-[400px] sm:h-[600px] bg-white sm:rounded-2xl shadow-2xl shadow-purple-500/10 z-50 flex flex-col border-0 sm:border border-gray-100 animate-scale-in overflow-hidden">
+    <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 w-full h-full sm:w-[400px] sm:h-[600px] bg-white sm:rounded-2xl shadow-2xl shadow-brand-navy/10 z-50 flex flex-col border-0 sm:border border-gray-100 animate-scale-in overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 text-white">
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue text-white">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
             <Sparkles className="w-5 h-5 animate-pulse-soft" />
@@ -1275,7 +1275,7 @@ export default function FloatingChat() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Conversaciones</span>
             <button
               onClick={createNewChat}
-              className="text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1.5 rounded-lg hover:shadow-md transition-all active:scale-95"
+              className="text-xs bg-gradient-to-r from-brand-navy to-brand-blue text-white px-3 py-1.5 rounded-lg hover:shadow-md transition-all active:scale-95"
             >
               + Nueva
             </button>
@@ -1286,7 +1286,7 @@ export default function FloatingChat() {
                 key={chat.id}
                 className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all ${
                   currentChatId === chat.id 
-                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200' 
+                    ? 'bg-gradient-to-r from-brand-navy/10 to-brand-blue/15 border border-brand-blue/30' 
                     : 'hover:bg-white hover:shadow-sm border border-transparent'
                 }`}
                 onClick={() => {
@@ -1316,8 +1316,8 @@ export default function FloatingChat() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50/50 to-white overscroll-y-contain">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-12 animate-fade-in">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-purple-500" />
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-brand-navy/10 to-brand-blue/15 rounded-2xl flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-brand-navy" />
             </div>
             <p className="font-medium text-gray-700 mb-1">¡Hola! Soy tu asistente IA</p>
             <p className="text-sm text-gray-400 max-w-[200px] mx-auto">Pregúntame sobre tu agenda o pídeme crear eventos y tareas</p>
@@ -1335,7 +1335,7 @@ export default function FloatingChat() {
                   key={i}
                   onClick={() => sendMessageText(suggestion)}
                   disabled={!currentChatId || loading}
-                  className="block w-full text-left text-xs px-3 py-2.5 sm:py-2 bg-white rounded-xl sm:rounded-lg border border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-purple-50 transition-all disabled:opacity-50 active:scale-[0.98]"
+                  className="block w-full text-left text-xs px-3 py-2.5 sm:py-2 bg-white rounded-xl sm:rounded-lg border border-gray-200 text-gray-600 hover:border-brand-blue hover:bg-brand-blue/10 transition-all disabled:opacity-50 active:scale-[0.98]"
                 >
                   &ldquo;{suggestion}&rdquo;
                 </button>
@@ -1352,7 +1352,7 @@ export default function FloatingChat() {
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
                   msg.role === 'user'
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-br-md'
+                    ? 'bg-gradient-to-r from-brand-navy to-brand-blue text-white rounded-br-md'
                     : 'bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-md'
                 }`}
               >
@@ -1376,7 +1376,7 @@ export default function FloatingChat() {
           <div className="flex justify-start animate-fade-in">
             <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
               <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                <Loader2 className="w-4 h-4 animate-spin text-brand-navy" />
                 <span className="text-sm text-gray-500">Pensando...</span>
               </div>
             </div>
@@ -1419,13 +1419,13 @@ export default function FloatingChat() {
                     }}
                     placeholder="Escribe tu mensaje aquí..."
                     autoFocus
-                    className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 focus:bg-white transition-all placeholder:text-gray-400 min-w-0"
+                    className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue focus:bg-white transition-all placeholder:text-gray-400 min-w-0"
                   />
                   <button
                     type="button"
                     onClick={sendVoiceNote}
                     disabled={!voiceNoteTranscript.trim()}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-purple-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                    className="bg-gradient-to-r from-brand-navy to-brand-blue text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-brand-navy/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                     title="Enviar mensaje"
                   >
                     <Send className="w-5 h-5" />
@@ -1462,7 +1462,7 @@ export default function FloatingChat() {
                   type="button"
                   onClick={sendVoiceNote}
                   disabled={!voiceNoteTranscript.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-purple-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                  className="bg-gradient-to-r from-brand-navy to-brand-blue text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-brand-navy/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                   title="Enviar mensaje"
                 >
                   <Send className="w-5 h-5" />
@@ -1495,7 +1495,7 @@ export default function FloatingChat() {
               }}
               placeholder="Escribe tu mensaje..."
               rows={1}
-              className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:bg-white text-sm transition-all placeholder:text-gray-400 resize-none max-h-[120px] overflow-y-auto"
+              className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue focus:bg-white text-sm transition-all placeholder:text-gray-400 resize-none max-h-[120px] overflow-y-auto"
               disabled={loading}
             />
             {speechSupported && (
@@ -1513,7 +1513,7 @@ export default function FloatingChat() {
                   <button
                     type="button"
                     onClick={startLiveVoice}
-                    className="p-2.5 rounded-xl transition-all active:scale-95 bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:shadow-lg hover:shadow-blue-500/25 shrink-0"
+                    className="p-2.5 rounded-xl transition-all active:scale-95 bg-gradient-to-r from-brand-navy to-brand-blue text-white hover:shadow-lg hover:shadow-brand-navy/25 shrink-0"
                     disabled={loading}
                     title="Conversar en vivo"
                   >
@@ -1525,7 +1525,7 @@ export default function FloatingChat() {
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all active:scale-95"
+              className="bg-gradient-to-r from-brand-navy to-brand-blue text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-brand-navy/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all active:scale-95"
             >
               <Send className="w-5 h-5" />
             </button>
@@ -1535,11 +1535,11 @@ export default function FloatingChat() {
 
       {/* Live Voice Conversation Overlay */}
       {liveVoiceMode && (
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900 via-blue-900 to-purple-900 sm:rounded-2xl flex flex-col z-20 animate-fade-in">
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-navy via-[#0a0938] to-brand-navy sm:rounded-2xl flex flex-col z-20 animate-fade-in">
           {/* Background effects */}
           <div className="absolute inset-0 overflow-hidden sm:rounded-2xl pointer-events-none">
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-purple-500/8 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-blue-500/8 rounded-full animate-ping" style={{ animationDuration: '2s' }} />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-brand-blue/8 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-brand-orange/8 rounded-full animate-ping" style={{ animationDuration: '2s' }} />
           </div>
 
           {/* Header */}
@@ -1591,20 +1591,20 @@ export default function FloatingChat() {
             <div className="relative">
               <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center transition-all duration-500 ${
                 liveVoiceState === 'listening'
-                  ? 'bg-purple-500/30 shadow-[0_0_60px_rgba(168,85,247,0.5)]'
+                  ? 'bg-brand-blue/30 shadow-[0_0_60px_rgba(148,200,249,0.5)]'
                   : liveVoiceState === 'processing'
                   ? 'bg-yellow-500/30 shadow-[0_0_60px_rgba(234,179,8,0.5)]'
                   : liveVoiceState === 'speaking'
-                  ? 'bg-blue-500/30 shadow-[0_0_60px_rgba(59,130,246,0.5)]'
+                  ? 'bg-brand-orange/30 shadow-[0_0_60px_rgba(255,169,20,0.5)]'
                   : 'bg-gray-500/30'
               }`}>
                 <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
                   liveVoiceState === 'listening'
-                    ? 'bg-purple-500 animate-pulse'
+                    ? 'bg-brand-blue animate-pulse'
                     : liveVoiceState === 'processing'
                     ? 'bg-yellow-500'
                     : liveVoiceState === 'speaking'
-                    ? 'bg-blue-500 animate-pulse'
+                    ? 'bg-brand-orange animate-pulse'
                     : 'bg-gray-500'
                 }`}>
                   {liveVoiceState === 'listening' && <Mic className="w-7 h-7 sm:w-8 sm:h-8 text-white" />}
@@ -1614,7 +1614,7 @@ export default function FloatingChat() {
                 </div>
               </div>
               {liveVoiceState === 'listening' && (
-                <div className="absolute inset-0 rounded-full border-2 border-purple-400/50 animate-ping" />
+                <div className="absolute inset-0 rounded-full border-2 border-brand-blue/50 animate-ping" />
               )}
             </div>
 

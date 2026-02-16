@@ -82,7 +82,7 @@ const FREQUENCY_LABELS: Record<DebtFrequency, string> = {
 };
 
 const STATUS_CONFIG: Record<DebtStatus, { label: string; color: string; bgColor: string; icon: LucideIcon }> = {
-  active: { label: 'Activo', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200', icon: Clock },
+  active: { label: 'Activo', color: 'text-brand-navy', bgColor: 'bg-brand-blue/10 border-brand-blue/30', icon: Clock },
   paid: { label: 'Pagado', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200', icon: CheckCircle2 },
   overdue: { label: 'Vencido', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200', icon: AlertCircle },
   paused: { label: 'Pausado', color: 'text-gray-600', bgColor: 'bg-gray-50 border-gray-200', icon: Pause },
@@ -514,10 +514,10 @@ export default function DebtsPage() {
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-purple-100 rounded-lg"><Home className="w-4 h-4 text-purple-600" /></div>
+            <div className="p-1.5 bg-brand-navy/10 rounded-lg"><Home className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Gastos Fijos</p>
           </div>
-          <p className="text-xl font-bold text-purple-600">${Math.round(stats.monthlyFixed).toLocaleString()}</p>
+          <p className="text-xl font-bold text-brand-navy">${Math.round(stats.monthlyFixed).toLocaleString()}</p>
           <span className="text-[10px] text-gray-400">{stats.fixedCount} gastos fijos</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -706,7 +706,7 @@ export default function DebtsPage() {
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div className={`h-full rounded-full transition-all duration-700 ${
-                        debtProgress >= 100 ? 'bg-green-500' : debtProgress >= 75 ? 'bg-blue-500' : 'bg-rose-500'
+                        debtProgress >= 100 ? 'bg-green-500' : debtProgress >= 75 ? 'bg-brand-blue' : 'bg-rose-500'
                       }`} style={{ width: `${Math.min(debtProgress, 100)}%` }} />
                     </div>
                     <p className="text-[10px] text-right mt-0.5 font-medium" style={{ color: catColor }}>
@@ -791,12 +791,12 @@ export default function DebtsPage() {
                       )}
                       {debt.status === 'paused' && (
                         <button onClick={(e) => { e.stopPropagation(); toggleStatus(debt, 'active'); }}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-brand-navy text-white rounded-lg hover:bg-[#1a1870] transition-colors text-xs font-medium">
                           <Clock className="w-3.5 h-3.5" /> Reactivar
                         </button>
                       )}
                       <button onClick={(e) => { e.stopPropagation(); handleEdit(debt); }}
-                        className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                        className="px-3 py-2 bg-brand-blue/10 text-brand-navy rounded-lg hover:bg-brand-blue/20 transition-colors text-xs font-medium">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete(debt.id); }}
@@ -886,7 +886,7 @@ export default function DebtsPage() {
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => setFormData({ ...formData, type: 'fixed_expense', category: 'servicios_basicos' })}
                   className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
-                    formData.type === 'fixed_expense' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    formData.type === 'fixed_expense' ? 'border-brand-navy bg-brand-navy/10 text-brand-navy' : 'border-gray-200 text-gray-500 hover:border-gray-300'
                   }`}>
                   <Home className="w-4 h-4" /> Gasto Fijo
                 </button>

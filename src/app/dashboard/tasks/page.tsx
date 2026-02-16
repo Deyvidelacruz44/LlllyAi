@@ -252,7 +252,7 @@ export default function TasksPage() {
   const getStatusIcon = (status: TaskStatus) => {
     switch (status) {
       case 'completed': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'in-progress': return <Clock className="w-5 h-5 text-blue-600" />;
+      case 'in-progress': return <Clock className="w-5 h-5 text-brand-navy" />;
       case 'cancelled': return <X className="w-5 h-5 text-gray-400" />;
       default: return <Circle className="w-5 h-5 text-gray-400" />;
     }
@@ -295,7 +295,7 @@ export default function TasksPage() {
           <p className="text-sm text-gray-600 mt-1">
             {stats.completed} de {stats.total} tareas completadas
             {stats.overdue > 0 && <span className="text-red-600 ml-2">• {stats.overdue} vencidas</span>}
-            {stats.today > 0 && <span className="text-blue-600 ml-2">• {stats.today} para hoy</span>}
+            {stats.today > 0 && <span className="text-brand-navy ml-2">• {stats.today} para hoy</span>}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -304,11 +304,11 @@ export default function TasksPage() {
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title="Buscar tareas"
           >
-            <Search className={`w-5 h-5 ${showSearch ? 'text-blue-600' : 'text-gray-600'}`} />
+            <Search className={`w-5 h-5 ${showSearch ? 'text-brand-navy' : 'text-gray-600'}`} />
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 bg-brand-navy text-white px-4 py-2 rounded-lg hover:bg-[#1a1870] transition-colors"
           >
             <Plus className="w-5 h-5" />
             Nueva Tarea
@@ -325,13 +325,13 @@ export default function TasksPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar tareas..."
-              className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
               autoFocus
             />
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
             >
               <option value="date">Ordenar por fecha</option>
               <option value="priority">Ordenar por prioridad</option>
@@ -341,7 +341,7 @@ export default function TasksPage() {
             <select
               value={groupMode}
               onChange={(e) => setGroupMode(e.target.value as GroupMode)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
             >
               <option value="none">Sin agrupar</option>
               <option value="priority">Agrupar por prioridad</option>
@@ -372,7 +372,7 @@ export default function TasksPage() {
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-lg">
           <p className="text-xs text-gray-600">En Progreso</p>
-          <p className="text-xl font-bold text-blue-600">{stats.inProgress}</p>
+          <p className="text-xl font-bold text-brand-navy">{stats.inProgress}</p>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-lg">
           <p className="text-xs text-gray-600">Completadas</p>
@@ -386,9 +386,9 @@ export default function TasksPage() {
           <p className="text-xs text-gray-600">Urgentes</p>
           <p className="text-xl font-bold text-yellow-600">{stats.urgent}</p>
         </div>
-        <div className="bg-white border border-blue-200 p-3 rounded-lg">
+        <div className="bg-white border border-brand-blue/30 p-3 rounded-lg">
           <p className="text-xs text-gray-600">Para Hoy</p>
-          <p className="text-xl font-bold text-blue-600">{stats.today}</p>
+          <p className="text-xl font-bold text-brand-navy">{stats.today}</p>
         </div>
       </div>
 
@@ -402,7 +402,7 @@ export default function TasksPage() {
               onClick={() => setFilter(status)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 filter === status
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-navy text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -421,7 +421,7 @@ export default function TasksPage() {
               onClick={() => setPriorityFilter(priority)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 priorityFilter === priority
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-brand-navy text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -443,7 +443,7 @@ export default function TasksPage() {
             <p className="text-gray-500 mb-2">No hay tareas en esta categoría</p>
             <button
               onClick={() => setShowModal(true)}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-brand-navy hover:text-brand-blue text-sm font-medium"
             >
               + Crear tarea
             </button>
@@ -466,7 +466,7 @@ export default function TasksPage() {
                       className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
                         urgency === 'overdue' ? 'bg-red-50' :
                         urgency === 'urgent' ? 'bg-yellow-50' :
-                        urgency === 'today' ? 'bg-blue-50' : ''
+                        urgency === 'today' ? 'bg-brand-blue/10' : ''
                       }`}
                       onClick={() => setShowTaskDetail(task)}
                     >
@@ -493,7 +493,7 @@ export default function TasksPage() {
                                   <span className="ml-2 text-xs text-red-600 font-normal">VENCIDA</span>
                                 )}
                                 {urgency === 'today' && (
-                                  <span className="ml-2 text-xs text-blue-600 font-normal">HOY</span>
+                                  <span className="ml-2 text-xs text-brand-navy font-normal">HOY</span>
                                 )}
                               </h3>
                               {task.description && (
@@ -509,7 +509,7 @@ export default function TasksPage() {
                                 {task.dueDate && (
                                   <span className={`text-xs flex items-center gap-1 ${
                                     urgency === 'overdue' ? 'text-red-600 font-medium' :
-                                    urgency === 'today' ? 'text-blue-600 font-medium' :
+                                    urgency === 'today' ? 'text-brand-navy font-medium' :
                                     'text-gray-500'
                                   }`}>
                                     <CalendarIcon className="w-3 h-3" />
@@ -527,7 +527,7 @@ export default function TasksPage() {
                                   e.stopPropagation();
                                   handleEdit(task);
                                 }}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-2 text-brand-navy hover:bg-brand-blue/10 rounded-lg transition-colors"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -640,7 +640,7 @@ export default function TasksPage() {
                   handleEdit(showTaskDetail);
                   setShowTaskDetail(null);
                 }}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 bg-brand-navy text-white py-2 rounded-lg hover:bg-[#1a1870] transition-colors"
               >
                 <Edit2 className="w-4 h-4" />
                 Editar
@@ -680,7 +680,7 @@ export default function TasksPage() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div>
@@ -689,7 +689,7 @@ export default function TasksPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -698,7 +698,7 @@ export default function TasksPage() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                   >
                     <option value="pending">Pendiente</option>
                     <option value="in-progress">En Progreso</option>
@@ -711,7 +711,7 @@ export default function TasksPage() {
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                   >
                     <option value="low">Baja</option>
                     <option value="medium">Media</option>
@@ -726,7 +726,7 @@ export default function TasksPage() {
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div>
@@ -735,13 +735,13 @@ export default function TasksPage() {
                   type="text"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="flex-1 bg-brand-navy text-white py-2 rounded-lg hover:bg-[#1a1870] transition-colors font-medium"
                 >
                   {editingTask ? 'Actualizar' : 'Crear'}
                 </button>

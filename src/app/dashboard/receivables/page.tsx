@@ -21,7 +21,7 @@ type StatusFilter = 'all' | ReceivableStatus;
 
 const STATUS_CONFIG: Record<ReceivableStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   pending: { label: 'Pendiente', color: 'text-amber-700', bgColor: 'bg-amber-50 border-amber-200', icon: Clock },
-  partial: { label: 'Parcial', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200', icon: ArrowDownLeft },
+  partial: { label: 'Parcial', color: 'text-brand-navy', bgColor: 'bg-brand-blue/10 border-brand-blue/30', icon: ArrowDownLeft },
   paid: { label: 'Cobrado', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200', icon: CheckCircle2 },
   overdue: { label: 'Vencido', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200', icon: AlertCircle },
   cancelled: { label: 'Cancelado', color: 'text-gray-500', bgColor: 'bg-gray-50 border-gray-200', icon: Ban },
@@ -332,7 +332,7 @@ export default function ReceivablesPage() {
 
   const getProgressColor = (pct: number): string => {
     if (pct >= 100) return 'bg-green-500';
-    if (pct >= 50) return 'bg-blue-500';
+    if (pct >= 50) return 'bg-brand-blue';
     if (pct > 0) return 'bg-amber-500';
     return 'bg-gray-300';
   };
@@ -343,7 +343,7 @@ export default function ReceivablesPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <Loader2 className="w-8 h-8 text-brand-navy animate-spin" />
           <p className="text-sm text-gray-500">Cargando cuentas por cobrar...</p>
         </div>
       </div>
@@ -354,13 +354,13 @@ export default function ReceivablesPage() {
     <div className="space-y-4">
 
       {/* ========== HEADER ========== */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl px-4 py-3 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue rounded-xl px-4 py-3 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HandCoins className="w-6 h-6" />
             <div>
               <h1 className="text-xl font-bold">Cobros</h1>
-              <p className="text-blue-100 text-xs">
+              <p className="text-white/70 text-xs">
                 {stats.activeCount} cuentas activas
                 {stats.overdueCount > 0
                   ? <span className="ml-1">• {stats.overdueCount} vencidas</span>
@@ -375,7 +375,7 @@ export default function ReceivablesPage() {
             </button>
             <button
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-1.5 bg-white text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-50 transition-all"
+              className="flex items-center gap-1.5 bg-white text-brand-navy px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-brand-blue/10 transition-all"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nueva Cuenta</span>
@@ -388,10 +388,10 @@ export default function ReceivablesPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-blue-100 rounded-lg"><HandCoins className="w-4 h-4 text-blue-600" /></div>
+            <div className="p-1.5 bg-brand-blue/20 rounded-lg"><HandCoins className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Por Cobrar</p>
           </div>
-          <p className="text-xl font-bold text-blue-600">${Math.round(stats.totalPending).toLocaleString()}</p>
+          <p className="text-xl font-bold text-brand-navy">${Math.round(stats.totalPending).toLocaleString()}</p>
           <span className="text-[10px] text-gray-400">{stats.activeCount} cuentas activas</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -404,10 +404,10 @@ export default function ReceivablesPage() {
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-purple-100 rounded-lg"><Users className="w-4 h-4 text-purple-600" /></div>
+            <div className="p-1.5 bg-brand-blue/20 rounded-lg"><Users className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Deudores</p>
           </div>
-          <p className="text-xl font-bold text-purple-600">{stats.uniqueDebtors}</p>
+          <p className="text-xl font-bold text-brand-navy">{stats.uniqueDebtors}</p>
           <span className="text-[10px] text-gray-400">personas/entidades</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -451,7 +451,7 @@ export default function ReceivablesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nombre, descripción..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-blue focus:border-transparent" />
         </div>
       )}
 
@@ -482,7 +482,7 @@ export default function ReceivablesPage() {
             Registra las deudas que te deben para llevar el control
           </p>
           <button onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-navy text-white rounded-lg hover:bg-[#1a1870] transition-colors text-xs font-medium">
             <Plus className="w-4 h-4" /> Nueva Cuenta
           </button>
         </div>
@@ -501,7 +501,7 @@ export default function ReceivablesPage() {
                 <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : rec.id)}>
                   {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center flex-shrink-0 shadow-sm">
                     <span className="text-white font-bold text-sm">
                       {rec.debtorName.charAt(0).toUpperCase()}
                     </span>
@@ -526,7 +526,7 @@ export default function ReceivablesPage() {
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-bold text-gray-900">${remaining.toLocaleString()}</p>
                     {paidPct > 0 && paidPct < 100 && (
-                      <p className="text-[10px] text-blue-500 font-medium">{paidPct}% cobrado</p>
+                      <p className="text-[10px] text-brand-navy font-medium">{paidPct}% cobrado</p>
                     )}
                     {paidPct >= 100 && (
                       <p className="text-[10px] text-green-500 font-medium">Cobrado ✓</p>
@@ -646,7 +646,7 @@ export default function ReceivablesPage() {
                         </button>
                       )}
                       <button onClick={(e) => { e.stopPropagation(); handleEdit(rec); }}
-                        className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                        className="px-3 py-2 bg-brand-blue/10 text-brand-navy rounded-lg hover:bg-brand-blue/20 transition-colors text-xs font-medium">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete(rec.id); }}
@@ -690,7 +690,7 @@ export default function ReceivablesPage() {
                 const pct = data.total > 0 ? Math.round((data.paid / data.total) * 100) : 0;
                 return (
                   <div key={name} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-[10px]">{name.charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -737,7 +737,7 @@ export default function ReceivablesPage() {
                   <input type="text" value={formData.debtorName}
                     onChange={(e) => setFormData({ ...formData, debtorName: e.target.value })}
                     required placeholder="Nombre de la persona/entidad"
-                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-transparent text-sm" />
                 </div>
               </div>
 
@@ -749,7 +749,7 @@ export default function ReceivablesPage() {
                   <input type="text" value={formData.debtorContact}
                     onChange={(e) => setFormData({ ...formData, debtorContact: e.target.value })}
                     placeholder="Teléfono, email..."
-                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-transparent text-sm" />
                 </div>
               </div>
 
@@ -761,7 +761,7 @@ export default function ReceivablesPage() {
                   <input type="number" step="0.01" min="0" value={formData.totalAmount}
                     onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
                     required placeholder="0.00"
-                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-bold" />
+                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-transparent text-lg font-bold" />
                 </div>
               </div>
 
@@ -771,7 +771,7 @@ export default function ReceivablesPage() {
                 <input type="text" value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required placeholder="Ej: Le presté para emergencia"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:border-transparent text-sm" />
               </div>
 
               {/* Category */}
@@ -783,7 +783,7 @@ export default function ReceivablesPage() {
                       onClick={() => setFormData({ ...formData, category: cat })}
                       className={`py-1.5 px-2 rounded-lg border text-[10px] font-medium transition-all ${
                         formData.category === cat
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          ? 'border-brand-navy bg-brand-blue/10 text-brand-navy'
                           : 'border-gray-100 text-gray-500 hover:border-gray-200 hover:bg-gray-50'
                       }`}>
                       {cat}
@@ -797,7 +797,7 @@ export default function ReceivablesPage() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">Fecha de Vencimiento (opcional)</label>
                 <input type="date" value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm" />
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue text-sm" />
               </div>
 
               {/* Notes */}
@@ -807,7 +807,7 @@ export default function ReceivablesPage() {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Notas adicionales..."
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue text-sm resize-none" />
               </div>
 
               {/* Status (when editing) */}
@@ -816,7 +816,7 @@ export default function ReceivablesPage() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">Estado</label>
                   <select value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as ReceivableStatus })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm">
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue text-sm">
                     <option value="pending">Pendiente</option>
                     <option value="partial">Parcial</option>
                     <option value="paid">Cobrado</option>
@@ -829,7 +829,7 @@ export default function ReceivablesPage() {
               {/* Submit */}
               <div className="flex gap-2 pt-2">
                 <button type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm">
+                  className="flex-1 bg-brand-navy text-white py-2.5 rounded-xl hover:bg-[#1a1870] transition-colors font-medium text-sm">
                   {editingReceivable ? 'Actualizar' : 'Registrar'}
                 </button>
                 <button type="button" onClick={resetForm}

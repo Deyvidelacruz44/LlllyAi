@@ -62,7 +62,7 @@ function LoadingSkeleton() {
       {/* Loading overlay */}
       <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="text-center animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/30 animate-pulse-soft">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-navy to-brand-blue rounded-2xl mb-4 shadow-lg shadow-brand-navy/30 animate-pulse-soft">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <p className="text-gray-600 font-medium">Cargando tu agenda...</p>

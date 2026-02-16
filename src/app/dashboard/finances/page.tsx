@@ -48,12 +48,12 @@ const CATEGORY_LABELS: Record<TransactionCategory, string> = {
 const CATEGORY_COLORS: Record<TransactionCategory, string> = {
   salario: 'bg-green-100 text-green-800 border-green-200',
   freelance: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  inversiones: 'bg-blue-100 text-blue-800 border-blue-200',
+  inversiones: 'bg-brand-blue/15 text-brand-navy border-brand-blue/30',
   cobros_clientes: 'bg-cyan-100 text-cyan-800 border-cyan-200',
   alimentacion: 'bg-orange-100 text-orange-800 border-orange-200',
   transporte: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  vivienda: 'bg-purple-100 text-purple-800 border-purple-200',
-  servicios: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  vivienda: 'bg-brand-navy/10 text-brand-navy border-brand-navy/20',
+  servicios: 'bg-brand-blue/20 text-brand-navy border-brand-blue/30',
   entretenimiento: 'bg-pink-100 text-pink-800 border-pink-200',
   salud: 'bg-red-100 text-red-800 border-red-200',
   educacion: 'bg-cyan-100 text-cyan-800 border-cyan-200',
@@ -647,17 +647,17 @@ export default function FinancesPage() {
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-blue-100 rounded-lg"><Wallet className="w-4 h-4 text-blue-600" /></div>
+            <div className="p-1.5 bg-brand-blue/20 rounded-lg"><Wallet className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Balance</p>
           </div>
-          <p className={`text-xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+          <p className={`text-xl font-bold ${stats.balance >= 0 ? 'text-brand-navy' : 'text-red-600'}`}>
             ${stats.balance.toLocaleString()}
           </p>
           {prevStats && <DeltaBadge current={stats.balance} previous={prevStats.balance} />}
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-1">
-            <div className="p-1.5 bg-purple-100 rounded-lg"><PiggyBank className="w-4 h-4 text-purple-600" /></div>
+            <div className="p-1.5 bg-brand-navy/10 rounded-lg"><PiggyBank className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Tasa Ahorro</p>
           </div>
           <p className={`text-xl font-bold ${stats.savingsRate >= 20 ? 'text-green-600' : stats.savingsRate >= 0 ? 'text-yellow-600' : 'text-red-600'}`}>
@@ -688,15 +688,15 @@ export default function FinancesPage() {
 
       {/* ========== AI ANALYSIS PANEL ========== */}
       {showAIPanel && (
-        <div className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
+        <div className="bg-gradient-to-br from-brand-navy/5 to-brand-blue/10 border border-brand-blue/30 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-purple-600" />
+              <Brain className="w-5 h-5 text-brand-navy" />
               <h3 className="text-sm font-bold text-gray-900">Análisis Financiero IA</h3>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={requestAIAnalysis} disabled={aiLoading} className="p-1.5 hover:bg-white/50 rounded-lg transition-colors">
-                <RefreshCw className={`w-3.5 h-3.5 text-purple-600 ${aiLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 text-brand-navy ${aiLoading ? 'animate-spin' : ''}`} />
               </button>
               <button onClick={() => setShowAIPanel(false)} className="p-1.5 hover:bg-white/50 rounded-lg transition-colors">
                 <X className="w-3.5 h-3.5 text-gray-500" />
@@ -706,7 +706,7 @@ export default function FinancesPage() {
 
           {aiLoading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+              <Loader2 className="w-6 h-6 text-brand-navy animate-spin" />
               <span className="ml-2 text-sm text-gray-600">Analizando tus finanzas...</span>
             </div>
           ) : aiAnalysis ? (
@@ -745,12 +745,12 @@ export default function FinancesPage() {
                         insight.type === 'success' ? 'bg-green-50 border-green-200' :
                         insight.type === 'warning' ? 'bg-yellow-50 border-yellow-200' :
                         insight.type === 'alert' ? 'bg-red-50 border-red-200' :
-                        'bg-blue-50 border-blue-200'
+                        'bg-brand-blue/10 border-brand-blue/20'
                       }`}>
                         <div className="flex items-center gap-1.5 mb-1">
                           <IconComponent className={`w-3.5 h-3.5 ${
                             insight.type === 'success' ? 'text-green-600' : insight.type === 'warning' ? 'text-yellow-600' :
-                            insight.type === 'alert' ? 'text-red-600' : 'text-blue-600'
+                            insight.type === 'alert' ? 'text-red-600' : 'text-brand-navy'
                           }`} />
                           <span className="font-semibold">{insight.title}</span>
                         </div>
@@ -767,7 +767,7 @@ export default function FinancesPage() {
                   <ul className="space-y-1">
                     {aiAnalysis.recommendations.map((rec, i) => (
                       <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700">
-                        <span className="text-purple-600 font-bold mt-0.5">•</span>{rec}
+                        <span className="text-brand-navy font-bold mt-0.5">•</span>{rec}
                       </li>
                     ))}
                   </ul>
@@ -847,7 +847,7 @@ export default function FinancesPage() {
                         )}
                       </div>
                       {(i === 0 || i === dailySpendingData.length - 1 || dayIsToday || i % 5 === 0) && (
-                        <span className={`text-[8px] mt-0.5 ${dayIsToday ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>
+                        <span className={`text-[8px] mt-0.5 ${dayIsToday ? 'text-brand-navy font-bold' : 'text-gray-400'}`}>
                           {format(day.date, 'd')}
                         </span>
                       )}
@@ -953,9 +953,9 @@ export default function FinancesPage() {
             <div className="bg-white rounded-xl shadow-sm border p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-                  <Target className="w-4 h-4 text-purple-500" /> Presupuestos
+                  <Target className="w-4 h-4 text-brand-navy" /> Presupuestos
                 </h3>
-                <button onClick={() => setActiveTab('budgets')} className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-0.5">
+                <button onClick={() => setActiveTab('budgets')} className="text-xs text-brand-navy hover:text-brand-blue flex items-center gap-0.5">
                   Ver todos <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -1009,11 +1009,11 @@ export default function FinancesPage() {
               </div>
               <div className="mt-6 grid grid-cols-3 gap-3 text-center max-w-sm mx-auto">
                 <div className="p-2">
-                  <BarChart3 className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+                  <BarChart3 className="w-5 h-5 text-brand-blue mx-auto mb-1" />
                   <p className="text-[10px] text-gray-400">Gráficas diarias</p>
                 </div>
                 <div className="p-2">
-                  <Brain className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+                  <Brain className="w-5 h-5 text-brand-navy/40 mx-auto mb-1" />
                   <p className="text-[10px] text-gray-400">Análisis IA</p>
                 </div>
                 <div className="p-2">
@@ -1120,7 +1120,7 @@ export default function FinancesPage() {
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-sm font-medium text-gray-900 truncate">{t.description}</h4>
                           {t.isRecurring && (
-                            <Repeat className="w-3 h-3 text-purple-400 flex-shrink-0" />
+                            <Repeat className="w-3 h-3 text-brand-navy/40 flex-shrink-0" />
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -1138,7 +1138,7 @@ export default function FinancesPage() {
                         </span>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={(e) => { e.stopPropagation(); handleEdit(t); }}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                            className="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-brand-blue/10 rounded-md transition-colors">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); handleDelete(t.id); }}
@@ -1172,25 +1172,25 @@ export default function FinancesPage() {
 
           {budgetProgress.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
-              <div className="mx-auto w-14 h-14 bg-purple-50 rounded-full flex items-center justify-center mb-3">
-                <Target className="w-7 h-7 text-purple-300" />
+              <div className="mx-auto w-14 h-14 bg-brand-navy/5 rounded-full flex items-center justify-center mb-3">
+                <Target className="w-7 h-7 text-brand-navy/30" />
               </div>
               <h4 className="text-sm font-bold text-gray-900 mb-1">Sin presupuestos definidos</h4>
               <p className="text-xs text-gray-500 mb-4 max-w-sm mx-auto">
                 Define presupuestos mensuales por categoría para recibir alertas cuando estés cerca del límite.
               </p>
               <button onClick={() => setShowBudgetModal(true)}
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium">
+                className="text-sm text-brand-navy hover:text-brand-blue font-medium">
                 + Crear primer presupuesto
               </button>
             </div>
           ) : (
             <div className="space-y-3">
               {/* Budget Overview Card */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100 rounded-xl p-4">
+              <div className="bg-gradient-to-br from-brand-navy/5 to-brand-blue/10 border border-brand-blue/20 rounded-xl p-4">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-lg font-bold text-purple-700">
+                    <p className="text-lg font-bold text-brand-navy">
                       ${budgetProgress.reduce((s, b) => s + b.amount, 0).toLocaleString()}
                     </p>
                     <p className="text-[10px] text-gray-500">Total Presupuestado</p>
@@ -1262,7 +1262,7 @@ export default function FinancesPage() {
                             setEditingBudget(b);
                             setBudgetFormData({ category: b.category, amount: b.amount.toString(), period: b.period });
                             setShowBudgetModal(true);
-                          }} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                          }} className="p-1.5 text-gray-400 hover:text-brand-navy hover:bg-brand-blue/10 rounded-md transition-colors">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => handleDeleteBudget(b.id)}
@@ -1302,7 +1302,7 @@ export default function FinancesPage() {
                       {showDetail.type === 'income' ? 'Ingreso' : 'Gasto'}
                     </span>
                     {showDetail.isRecurring && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 flex items-center gap-0.5">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy flex items-center gap-0.5">
                         <Repeat className="w-3 h-3" /> {showDetail.recurringFrequency || 'Recurrente'}
                       </span>
                     )}
@@ -1346,7 +1346,7 @@ export default function FinancesPage() {
 
             <div className="flex gap-2 pt-3 border-t">
               <button onClick={() => { handleEdit(showDetail); setShowDetail(null); }}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                className="flex-1 flex items-center justify-center gap-2 bg-brand-navy text-white py-2 rounded-lg hover:bg-[#1a1870] transition-colors text-sm font-medium">
                 <Edit2 className="w-4 h-4" /> Editar
               </button>
               <button onClick={() => { setShowDetail(null); handleDelete(showDetail.id); }}
@@ -1449,12 +1449,12 @@ export default function FinancesPage() {
               {/* Recurring Toggle */}
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                 <div className="flex items-center gap-2">
-                  <Repeat className="w-4 h-4 text-purple-500" />
+                  <Repeat className="w-4 h-4 text-brand-navy" />
                   <span className="text-sm text-gray-700">Transacción recurrente</span>
                 </div>
                 <button type="button"
                   onClick={() => setFormData({ ...formData, isRecurring: !formData.isRecurring })}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${formData.isRecurring ? 'bg-purple-500' : 'bg-gray-300'}`}>
+                  className={`relative w-10 h-5 rounded-full transition-colors ${formData.isRecurring ? 'bg-brand-navy' : 'bg-gray-300'}`}>
                   <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.isRecurring ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
@@ -1462,7 +1462,7 @@ export default function FinancesPage() {
               {formData.isRecurring && (
                 <select value={formData.recurringFrequency}
                   onChange={(e) => setFormData({ ...formData, recurringFrequency: e.target.value as typeof formData.recurringFrequency })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 text-sm">
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue text-sm">
                   <option value="weekly">Semanal</option>
                   <option value="biweekly">Quincenal</option>
                   <option value="monthly">Mensual</option>
@@ -1503,7 +1503,7 @@ export default function FinancesPage() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
                 <select value={budgetFormData.category}
                   onChange={(e) => setBudgetFormData({ ...budgetFormData, category: e.target.value as TransactionCategory })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 text-sm">
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue text-sm">
                   {EXPENSE_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
                   ))}
@@ -1516,14 +1516,14 @@ export default function FinancesPage() {
                   <input type="number" step="0.01" min="0" value={budgetFormData.amount}
                     onChange={(e) => setBudgetFormData({ ...budgetFormData, amount: e.target.value })}
                     required placeholder="0.00"
-                    className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 text-sm font-bold" />
+                    className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue text-sm font-bold" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Período</label>
                 <select value={budgetFormData.period}
                   onChange={(e) => setBudgetFormData({ ...budgetFormData, period: e.target.value as typeof budgetFormData.period })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 text-sm">
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-blue text-sm">
                   <option value="weekly">Semanal</option>
                   <option value="monthly">Mensual</option>
                   <option value="yearly">Anual</option>
@@ -1531,7 +1531,7 @@ export default function FinancesPage() {
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="submit"
-                  className="flex-1 bg-purple-600 text-white py-2.5 rounded-xl hover:bg-purple-700 transition-colors font-medium text-sm">
+                  className="flex-1 bg-brand-navy text-white py-2.5 rounded-xl hover:bg-[#1a1870] transition-colors font-medium text-sm">
                   {editingBudget ? 'Actualizar' : 'Crear'}
                 </button>
                 <button type="button" onClick={resetBudgetForm}

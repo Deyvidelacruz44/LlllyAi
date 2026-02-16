@@ -207,9 +207,9 @@ export default function DashboardPage() {
 
   const getEventTypeColor = (type: EventType) => {
     switch (type) {
-      case 'work': return 'bg-blue-100 border-blue-500 text-blue-700';
+      case 'work': return 'bg-brand-blue/20 border-brand-navy text-brand-navy';
       case 'personal': return 'bg-green-100 border-green-500 text-green-700';
-      case 'meeting': return 'bg-purple-100 border-purple-500 text-purple-700';
+      case 'meeting': return 'bg-brand-orange/15 border-brand-orange text-brand-orange';
       case 'reminder': return 'bg-yellow-100 border-yellow-500 text-yellow-700';
       default: return 'bg-gray-100 border-gray-500 text-gray-700';
     }
@@ -288,7 +288,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setViewMode('month')}
               className={`flex items-center gap-1 px-2 md:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors ${
-                viewMode === 'month' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                viewMode === 'month' ? 'bg-white text-brand-navy shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
               title="Vista mensual"
             >
@@ -298,7 +298,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setViewMode('week')}
               className={`flex items-center gap-1 px-2 md:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors ${
-                viewMode === 'week' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                viewMode === 'week' ? 'bg-white text-brand-navy shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
               title="Vista semanal"
             >
@@ -308,7 +308,7 @@ export default function DashboardPage() {
             <button
               onClick={() => setViewMode('day')}
               className={`flex items-center gap-1 px-2 md:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors ${
-                viewMode === 'day' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                viewMode === 'day' ? 'bg-white text-brand-navy shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
               title="Vista diaria"
             >
@@ -325,7 +325,7 @@ export default function DashboardPage() {
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               title="Filtrar por tipo"
             >
-              <Filter className={`w-5 h-5 ${typeFilter !== 'all' ? 'text-blue-600' : 'text-gray-600'}`} />
+              <Filter className={`w-5 h-5 ${typeFilter !== 'all' ? 'text-brand-navy' : 'text-gray-600'}`} />
             </button>
           </div>
           {/* Search */}
@@ -356,7 +356,7 @@ export default function DashboardPage() {
               });
               setShowModal(true);
             }}
-            className="flex items-center gap-2 bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 bg-brand-navy text-white px-3 md:px-4 py-2 rounded-lg hover:bg-[#1a1870] transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span className="hidden md:inline">Nuevo</span>
@@ -373,13 +373,13 @@ export default function DashboardPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por título, descripción o ubicación..."
-              className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
               autoFocus
             />
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as EventType | 'all')}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
             >
               <option value="all">Todos los tipos</option>
               <option value="work">Trabajo</option>
@@ -391,7 +391,7 @@ export default function DashboardPage() {
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
             >
               <option value="date">Ordenar por fecha</option>
               <option value="title">Ordenar por título</option>
@@ -425,7 +425,7 @@ export default function DashboardPage() {
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-lg">
           <p className="text-xs text-gray-600">Hoy</p>
-          <p className="text-xl font-bold text-blue-600">{todayEvents.length}</p>
+          <p className="text-xl font-bold text-brand-navy">{todayEvents.length}</p>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-lg">
           <p className="text-xs text-gray-600">Pasados</p>
@@ -437,7 +437,7 @@ export default function DashboardPage() {
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-lg">
           <p className="text-xs text-gray-600">Esta semana</p>
-          <p className="text-xl font-bold text-purple-600">
+          <p className="text-xl font-bold text-brand-navy">
             {events.filter(e => {
               const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
               const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -470,7 +470,7 @@ export default function DashboardPage() {
                 <div
                   key={day.toString()}
                   className={`min-h-16 md:min-h-24 p-1 md:p-2 border rounded-lg ${
-                    isDayToday ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-300' : 
+                    isDayToday ? 'bg-brand-blue/10 border-brand-navy ring-2 ring-brand-blue/30' : 
                     isDayPast ? 'bg-gray-50 border-gray-200 opacity-70' :
                     'bg-white border-gray-200'
                   } hover:bg-gray-100 hover:border-gray-300 transition-all cursor-pointer`}
@@ -479,7 +479,7 @@ export default function DashboardPage() {
                     setViewMode('day');
                   }}
                 >
-                  <div className={`text-xs md:text-sm font-medium ${isDayToday ? 'text-blue-600 font-bold' : isDayPast ? 'text-gray-400' : 'text-gray-700'}`}>
+                  <div className={`text-xs md:text-sm font-medium ${isDayToday ? 'text-brand-navy font-bold' : isDayPast ? 'text-gray-400' : 'text-gray-700'}`}>
                     {format(day, 'd')}
                   </div>
                   <div className="mt-1 space-y-1">
@@ -520,7 +520,7 @@ export default function DashboardPage() {
                 <div key={day.toString()} className="min-h-[300px] md:min-h-[400px]">
                   <div
                     className={`text-center p-2 rounded-t-lg cursor-pointer ${
-                      isDayToday ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
+                      isDayToday ? 'bg-brand-navy text-white' : 'bg-gray-100 text-gray-700'
                     }`}
                     onClick={() => {
                       setSelectedDate(day);
@@ -596,7 +596,7 @@ export default function DashboardPage() {
                   });
                   setShowModal(true);
                 }}
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="text-brand-navy hover:text-brand-blue text-sm font-medium"
               >
                 + Crear evento
               </button>
@@ -729,7 +729,7 @@ export default function DashboardPage() {
                   handleEdit(showEventDetail);
                   setShowEventDetail(null);
                 }}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 bg-brand-navy text-white py-2 rounded-lg hover:bg-[#1a1870] transition-colors"
               >
                 <Edit2 className="w-4 h-4" />
                 Editar
@@ -769,7 +769,7 @@ export default function DashboardPage() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div>
@@ -778,7 +778,7 @@ export default function DashboardPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -789,7 +789,7 @@ export default function DashboardPage() {
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                   />
                 </div>
                 <div>
@@ -799,7 +799,7 @@ export default function DashboardPage() {
                     value={formData.startTime}
                     onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                   />
                 </div>
               </div>
@@ -811,7 +811,7 @@ export default function DashboardPage() {
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                   />
                 </div>
                 <div>
@@ -821,7 +821,7 @@ export default function DashboardPage() {
                     value={formData.endTime}
                     onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                   />
                 </div>
               </div>
@@ -830,7 +830,7 @@ export default function DashboardPage() {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as EventType })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 >
                   <option value="work">Trabajo</option>
                   <option value="personal">Personal</option>
@@ -845,13 +845,13 @@ export default function DashboardPage() {
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="flex-1 bg-brand-navy text-white py-2 rounded-lg hover:bg-[#1a1870] transition-colors font-medium"
                 >
                   {editingEvent ? 'Actualizar' : 'Crear'}
                 </button>

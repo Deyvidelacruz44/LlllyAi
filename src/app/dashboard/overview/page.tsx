@@ -309,9 +309,9 @@ export default function OverviewPage() {
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
-      case 'work': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'work': return 'bg-brand-blue/20 text-brand-navy border-brand-blue/30';
       case 'personal': return 'bg-green-100 text-green-700 border-green-200';
-      case 'meeting': return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'meeting': return 'bg-brand-orange/15 text-brand-orange border-brand-orange/25';
       case 'reminder': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -341,7 +341,7 @@ export default function OverviewPage() {
       case 'success': return 'bg-green-50 border-green-200 text-green-800';
       case 'warning': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
       case 'alert': return 'bg-red-50 border-red-200 text-red-800';
-      case 'info': return 'bg-blue-50 border-blue-200 text-blue-800';
+      case 'info': return 'bg-brand-blue/10 border-brand-blue/30 text-brand-navy';
       default: return 'bg-gray-50 border-gray-200 text-gray-800';
     }
   };
@@ -379,32 +379,32 @@ export default function OverviewPage() {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl px-4 py-3 text-white shadow-lg animate-fade-in">
+      <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue rounded-xl px-4 py-3 text-white shadow-lg animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6" />
             <h1 className="text-xl font-bold">Panel de Control</h1>
           </div>
           <div className="text-right text-sm">
-            <p className="text-blue-100">{user?.displayName || 'Usuario'}</p>
-            <p className="text-xs text-blue-200">{format(new Date(), "d MMM yyyy", { locale: es })}</p>
+            <p className="text-white/80">{user?.displayName || 'Usuario'}</p>
+            <p className="text-xs text-white/60">{format(new Date(), "d MMM yyyy", { locale: es })}</p>
           </div>
         </div>
       </div>
 
       {/* AI Analysis Section */}
       {(aiAnalyzing || aiSummary || aiInsights.length > 0) && (
-        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-3 border border-purple-200">
+        <div className="bg-gradient-to-br from-brand-navy/5 to-brand-blue/10 rounded-lg p-3 border border-brand-blue/30">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-purple-600 p-1 rounded">
+            <div className="bg-brand-navy p-1 rounded">
               <Brain className="w-3.5 h-3.5 text-white" />
             </div>
             <h2 className="text-sm font-bold text-gray-900">Análisis Inteligente</h2>
-            {aiAnalyzing && <Loader2 className="w-3 h-3 text-purple-600 animate-spin" />}
+            {aiAnalyzing && <Loader2 className="w-3 h-3 text-brand-navy animate-spin" />}
           </div>
 
           {aiAnalyzing && !aiSummary && (
-            <div className="flex items-center gap-2 text-purple-700">
+            <div className="flex items-center gap-2 text-brand-navy">
               <Loader2 className="w-3 h-3 animate-spin" />
               <p className="text-xs">Analizando...</p>
             </div>
@@ -440,25 +440,28 @@ export default function OverviewPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
         {[
-          { label: 'Hoy', value: stats.todayEvents, icon: CalendarClock, color: 'blue' },
-          { label: 'Semana', value: stats.thisWeekEvents, icon: Calendar, color: 'purple' },
+          { label: 'Hoy', value: stats.todayEvents, icon: CalendarClock, color: 'brand-navy' },
+          { label: 'Semana', value: stats.thisWeekEvents, icon: Calendar, color: 'brand-blue' },
           { label: 'Pendientes', value: stats.pendingTasks, icon: Clock, color: 'orange' },
           { label: 'Listas', value: stats.completedTasks, icon: CheckCircle, color: 'green' },
           { label: 'Urgentes', value: stats.urgentTasks, icon: Zap, color: 'red' },
           { label: 'Vencidas', value: stats.overdueTasks, icon: AlertCircle, color: 'rose' },
-          { label: 'Eventos', value: stats.totalEvents, icon: Calendar, color: 'indigo' },
+          { label: 'Eventos', value: stats.totalEvents, icon: Calendar, color: 'brand-orange' },
           { label: 'Tareas', value: stats.totalTasks, icon: ListTodo, color: 'teal' },
         ].map((stat) => {
           const Icon = stat.icon;
           const colorClasses: Record<string, string> = {
-            blue: 'text-blue-600 bg-blue-50',
-            purple: 'text-purple-600 bg-purple-50',
+            blue: 'text-brand-navy bg-brand-blue/15',
+            purple: 'text-brand-navy bg-brand-navy/10',
             orange: 'text-orange-600 bg-orange-50',
             green: 'text-green-600 bg-green-50',
             red: 'text-red-600 bg-red-50',
             rose: 'text-rose-600 bg-rose-50',
-            indigo: 'text-indigo-600 bg-indigo-50',
+            indigo: 'text-brand-navy bg-brand-blue/10',
             teal: 'text-teal-600 bg-teal-50',
+            'brand-navy': 'text-brand-navy bg-brand-navy/10',
+            'brand-blue': 'text-brand-navy bg-brand-blue/15',
+            'brand-orange': 'text-brand-orange bg-brand-orange/10',
           };
           const textColor = colorClasses[stat.color].split(' ')[0];
           const bgColor = colorClasses[stat.color].split(' ')[1];
@@ -500,8 +503,8 @@ export default function OverviewPage() {
               <p className="text-[10px] text-gray-500">Gastos</p>
             </div>
             <div className="bg-white/70 rounded-lg p-2 text-center">
-              <TrendingUp className="w-4 h-4 text-blue-500 mx-auto mb-0.5" />
-              <p className={`text-sm font-bold ${financeStats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>${financeStats.balance.toLocaleString()}</p>
+              <TrendingUp className="w-4 h-4 text-brand-blue mx-auto mb-0.5" />
+              <p className={`text-sm font-bold ${financeStats.balance >= 0 ? 'text-brand-navy' : 'text-red-600'}`}>${financeStats.balance.toLocaleString()}</p>
               <p className="text-[10px] text-gray-500">Balance</p>
             </div>
           </div>
@@ -512,12 +515,12 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1">
         {/* Próximos Eventos */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-between">
+          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-brand-navy/5 to-brand-blue/10 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-blue-600" />
+              <Calendar className="w-4 h-4 text-brand-navy" />
               <h2 className="text-sm font-semibold text-gray-900">Próximos Eventos</h2>
             </div>
-            <Link href="/dashboard/calendar" className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-0.5">
+            <Link href="/dashboard/calendar" className="text-xs text-brand-navy hover:text-brand-blue flex items-center gap-0.5">
               Ver todos <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -534,12 +537,12 @@ export default function OverviewPage() {
                     key={event.id}
                     className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
                   >
-                    <div className={`w-1.5 h-8 rounded-full ${event.type === 'work' ? 'bg-blue-500' : event.type === 'personal' ? 'bg-green-500' : event.type === 'meeting' ? 'bg-purple-500' : 'bg-yellow-500'}`}></div>
+                    <div className={`w-1.5 h-8 rounded-full ${event.type === 'work' ? 'bg-brand-navy' : event.type === 'personal' ? 'bg-green-500' : event.type === 'meeting' ? 'bg-brand-orange' : 'bg-yellow-500'}`}></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
                       <p className="text-xs text-gray-500">{format(event.startDate, "d MMM, HH:mm", { locale: es })}</p>
                     </div>
-                    {isToday(event.startDate) && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-600 text-white">HOY</span>}
+                    {isToday(event.startDate) && <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-navy text-white">HOY</span>}
                   </div>
                 ))}
               </div>
@@ -549,12 +552,12 @@ export default function OverviewPage() {
 
         {/* Tareas Prioritarias */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-pink-50 flex items-center justify-between">
+          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-brand-orange/10 to-brand-orange/5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <ListTodo className="w-4 h-4 text-purple-600" />
+              <ListTodo className="w-4 h-4 text-brand-orange" />
               <h2 className="text-sm font-semibold text-gray-900">Tareas Prioritarias</h2>
             </div>
-            <Link href="/dashboard/tasks" className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-0.5">
+            <Link href="/dashboard/tasks" className="text-xs text-brand-orange hover:text-[#e69200] flex items-center gap-0.5">
               Ver todas <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
