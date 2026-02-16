@@ -348,74 +348,106 @@ export default function OverviewPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        {/* Header skeleton */}
-        <div className="bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl p-6 h-32"></div>
-        
-        {/* Stats skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="h-4 w-24 bg-gray-200 rounded"></div>
-                  <div className="h-8 w-16 bg-gray-300 rounded"></div>
-                </div>
-                <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
-              </div>
-            </div>
-          ))}
+      <div className="space-y-4">
+        <div className="h-36 bg-brand-navy rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />)}
         </div>
-        
-        {/* Content skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-80"></div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-80"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {[1, 2, 3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="bg-brand-navy rounded-xl px-4 py-3 text-white shadow-lg animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6" />
-            <h1 className="text-xl font-bold">Panel de Control</h1>
+    <div className="space-y-4">
+      {/* ===== HEADER ===== */}
+      <div className="bg-brand-navy rounded-2xl p-5 text-white shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">Panel de Control</h1>
+              <p className="text-white/70 text-sm">Resumen de tu productividad y agenda</p>
+            </div>
           </div>
-          <div className="text-right text-sm">
-            <p className="text-white/80">{user?.displayName || 'Usuario'}</p>
+          <div className="text-right">
+            <p className="text-sm font-medium text-white/90">{user?.displayName || 'Usuario'}</p>
             <p className="text-xs text-white/60">{format(new Date(), "d MMM yyyy", { locale: es })}</p>
+          </div>
+        </div>
+
+        {/* Header quick stats - same style as Métricas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <CalendarClock className="w-4 h-4 text-green-300" />
+              <span className="text-xs text-white/70">Hoy</span>
+            </div>
+            <p className="text-2xl font-bold">{stats.todayEvents}</p>
+            <p className="text-[10px] text-white/60">evento{stats.todayEvents !== 1 ? 's' : ''} · {stats.pendingTasks} tarea{stats.pendingTasks !== 1 ? 's' : ''} pendiente{stats.pendingTasks !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="w-4 h-4 text-emerald-300" />
+              <span className="text-xs text-white/70">Productividad</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
+            </p>
+            <p className="text-[10px] text-white/60">{stats.completedTasks}/{stats.totalTasks} tareas</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Calendar className="w-4 h-4 text-brand-blue" />
+              <span className="text-xs text-white/70">Semana</span>
+            </div>
+            <p className="text-2xl font-bold">{stats.thisWeekEvents}</p>
+            <p className="text-[10px] text-white/60">evento{stats.thisWeekEvents !== 1 ? 's' : ''} esta semana</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle className="w-4 h-4 text-orange-300" />
+              <span className="text-xs text-white/70">Alertas</span>
+            </div>
+            <p className="text-2xl font-bold text-orange-300">{stats.overdueTasks + stats.urgentTasks}</p>
+            <p className="text-[10px] text-white/60">
+              {stats.overdueTasks > 0 ? `${stats.overdueTasks} vencida${stats.overdueTasks !== 1 ? 's' : ''}` : ''}
+              {stats.overdueTasks > 0 && stats.urgentTasks > 0 ? ' · ' : ''}
+              {stats.urgentTasks > 0 ? `${stats.urgentTasks} urgente${stats.urgentTasks !== 1 ? 's' : ''}` : ''}
+              {stats.overdueTasks === 0 && stats.urgentTasks === 0 ? 'Todo al día' : ''}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* AI Analysis Section */}
+      {/* ===== AI ANALYSIS ===== */}
       {(aiAnalyzing || aiSummary || aiInsights.length > 0) && (
-        <div className="bg-brand-navy/5 rounded-lg p-3 border border-brand-blue/30">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-brand-navy p-1 rounded">
-              <Brain className="w-3.5 h-3.5 text-white" />
+            <div className="bg-brand-navy/10 p-1.5 rounded-lg">
+              <Brain className="w-4 h-4 text-brand-navy" />
             </div>
-            <h2 className="text-sm font-bold text-gray-900">Análisis Inteligente</h2>
-            {aiAnalyzing && <Loader2 className="w-3 h-3 text-brand-navy animate-spin" />}
+            <h2 className="text-sm font-semibold text-gray-900">Análisis Inteligente</h2>
+            {aiAnalyzing && <Loader2 className="w-3.5 h-3.5 text-brand-navy animate-spin" />}
           </div>
 
           {aiAnalyzing && !aiSummary && (
             <div className="flex items-center gap-2 text-brand-navy">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <p className="text-xs">Analizando...</p>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <p className="text-xs">Analizando tu actividad...</p>
             </div>
           )}
 
           {aiSummary && (
-            <p className="text-xs text-gray-600 mb-2 line-clamp-1">{aiSummary}</p>
+            <p className="text-xs text-gray-600 mb-3 leading-relaxed">{aiSummary}</p>
           )}
 
           {aiInsights.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
               {aiInsights.map((insight, index) => {
                 const IconComponent = typeof insight.icon === 'string' 
                   ? iconMap[insight.icon] || Brain 
@@ -423,12 +455,13 @@ export default function OverviewPage() {
                 return (
                   <div 
                     key={index}
-                    className={`rounded px-2 py-1.5 border ${getInsightColor(insight.type)}`}
+                    className={`rounded-lg px-3 py-2 border ${getInsightColor(insight.type)}`}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <IconComponent className="w-3 h-3 flex-shrink-0" />
-                      <span className="font-medium text-xs truncate">{insight.title}</span>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <IconComponent className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="font-semibold text-xs truncate">{insight.title}</span>
                     </div>
+                    <p className="text-[10px] opacity-80 line-clamp-2">{insight.message}</p>
                   </div>
                 );
               })}
@@ -437,158 +470,147 @@ export default function OverviewPage() {
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
-        {[
-          { label: 'Hoy', value: stats.todayEvents, icon: CalendarClock, color: 'brand-navy' },
-          { label: 'Semana', value: stats.thisWeekEvents, icon: Calendar, color: 'brand-blue' },
-          { label: 'Pendientes', value: stats.pendingTasks, icon: Clock, color: 'orange' },
-          { label: 'Listas', value: stats.completedTasks, icon: CheckCircle, color: 'green' },
-          { label: 'Urgentes', value: stats.urgentTasks, icon: Zap, color: 'red' },
-          { label: 'Vencidas', value: stats.overdueTasks, icon: AlertCircle, color: 'rose' },
-          { label: 'Eventos', value: stats.totalEvents, icon: Calendar, color: 'brand-orange' },
-          { label: 'Tareas', value: stats.totalTasks, icon: ListTodo, color: 'teal' },
-        ].map((stat) => {
-          const Icon = stat.icon;
-          const colorClasses: Record<string, string> = {
-            blue: 'text-brand-navy bg-brand-blue/15',
-            purple: 'text-brand-navy bg-brand-navy/10',
-            orange: 'text-orange-600 bg-orange-50',
-            green: 'text-green-600 bg-green-50',
-            red: 'text-red-600 bg-red-50',
-            rose: 'text-rose-600 bg-rose-50',
-            indigo: 'text-brand-navy bg-brand-blue/10',
-            teal: 'text-teal-600 bg-teal-50',
-            'brand-navy': 'text-brand-navy bg-brand-navy/10',
-            'brand-blue': 'text-brand-navy bg-brand-blue/15',
-            'brand-orange': 'text-brand-orange bg-brand-orange/10',
-          };
-          const textColor = colorClasses[stat.color].split(' ')[0];
-          const bgColor = colorClasses[stat.color].split(' ')[1];
-          
-          return (
-            <div 
-              key={stat.label}
-              className={`${bgColor} rounded-lg p-2 text-center border border-gray-100 hover:shadow-sm transition-all`}
-            >
-              <Icon className={`w-4 h-4 ${textColor} mx-auto mb-1`} />
-              <p className={`text-lg font-bold ${textColor}`}>{stat.value}</p>
-              <p className="text-[10px] text-gray-500 truncate">{stat.label}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Finance Widget */}
-      {(financeStats.count > 0 || financeStats.income > 0 || financeStats.expenses > 0) && (
-        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <Wallet className="w-4 h-4 text-emerald-600" />
-              <h2 className="text-sm font-semibold text-gray-900">Finanzas del Mes</h2>
-            </div>
-            <Link href="/dashboard/finances" className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5">
-              Ver detalle <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white/70 rounded-lg p-2 text-center">
-              <ArrowUpCircle className="w-4 h-4 text-green-500 mx-auto mb-0.5" />
-              <p className="text-sm font-bold text-green-600">${financeStats.income.toLocaleString()}</p>
-              <p className="text-[10px] text-gray-500">Ingresos</p>
-            </div>
-            <div className="bg-white/70 rounded-lg p-2 text-center">
-              <ArrowDownCircle className="w-4 h-4 text-red-500 mx-auto mb-0.5" />
-              <p className="text-sm font-bold text-red-600">${financeStats.expenses.toLocaleString()}</p>
-              <p className="text-[10px] text-gray-500">Gastos</p>
-            </div>
-            <div className="bg-white/70 rounded-lg p-2 text-center">
-              <TrendingUp className="w-4 h-4 text-brand-blue mx-auto mb-0.5" />
-              <p className={`text-sm font-bold ${financeStats.balance >= 0 ? 'text-brand-navy' : 'text-red-600'}`}>${financeStats.balance.toLocaleString()}</p>
-              <p className="text-[10px] text-gray-500">Balance</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1">
+      {/* ===== MAIN GRID - 3 columns like Métricas ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Próximos Eventos */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-100 bg-brand-navy/5 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-brand-navy" />
-              <h2 className="text-sm font-semibold text-gray-900">Próximos Eventos</h2>
-            </div>
-            <Link href="/dashboard/calendar" className="text-xs text-brand-navy hover:text-brand-blue flex items-center gap-0.5">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="bg-brand-navy/10 p-1 rounded-lg"><Calendar className="w-4 h-4 text-brand-navy" /></div>
+            <span className="flex-1">Próximos Eventos</span>
+            <Link href="/dashboard/calendar" className="text-xs text-brand-navy hover:text-brand-blue flex items-center gap-0.5 font-normal">
               Ver todos <ArrowRight className="w-3 h-3" />
             </Link>
-          </div>
-          <div className="p-2 flex-1 overflow-auto max-h-[180px]">
-            {upcomingEvents.length === 0 ? (
-              <div className="text-center py-6">
-                <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-500 text-xs">No hay eventos</p>
+          </h3>
+          {upcomingEvents.length === 0 ? (
+            <div className="flex items-center justify-center h-24 text-gray-400 text-xs">
+              <div className="text-center">
+                <Calendar className="w-6 h-6 text-gray-300 mx-auto mb-1" />
+                <p>Sin eventos próximos</p>
               </div>
-            ) : (
-              <div className="space-y-1.5">
-                {upcomingEvents.slice(0, 4).map((event) => (
-                  <div 
-                    key={event.id}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
-                  >
-                    <div className={`w-1.5 h-8 rounded-full ${event.type === 'work' ? 'bg-brand-navy' : event.type === 'personal' ? 'bg-green-500' : event.type === 'meeting' ? 'bg-brand-orange' : 'bg-yellow-500'}`}></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
-                      <p className="text-xs text-gray-500">{format(event.startDate, "d MMM, HH:mm", { locale: es })}</p>
-                    </div>
-                    {isToday(event.startDate) && <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-navy text-white">HOY</span>}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {upcomingEvents.slice(0, 5).map((event) => (
+                <div 
+                  key={event.id}
+                  className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className={`w-1.5 h-10 rounded-full flex-shrink-0 ${
+                    event.type === 'work' ? 'bg-brand-navy' : 
+                    event.type === 'personal' ? 'bg-green-500' : 
+                    event.type === 'meeting' ? 'bg-brand-orange' : 'bg-yellow-500'
+                  }`}></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
+                    <p className="text-xs text-gray-500">{format(event.startDate, "d MMM, HH:mm", { locale: es })}</p>
                   </div>
-                ))}
-              </div>
-            )}
+                  {isToday(event.startDate) && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-navy text-white font-medium">HOY</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-3 pt-3 border-t border-gray-100 text-xs flex justify-between">
+            <span className="text-gray-500">Total eventos</span>
+            <span className="font-bold text-gray-900">{stats.totalEvents}</span>
           </div>
         </div>
 
         {/* Tareas Prioritarias */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-brand-orange/10 to-brand-orange/5 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <ListTodo className="w-4 h-4 text-brand-orange" />
-              <h2 className="text-sm font-semibold text-gray-900">Tareas Prioritarias</h2>
-            </div>
-            <Link href="/dashboard/tasks" className="text-xs text-brand-orange hover:text-[#e69200] flex items-center gap-0.5">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="bg-brand-orange/10 p-1 rounded-lg"><ListTodo className="w-4 h-4 text-brand-orange" /></div>
+            <span className="flex-1">Tareas Prioritarias</span>
+            <Link href="/dashboard/tasks" className="text-xs text-brand-orange hover:text-[#e69200] flex items-center gap-0.5 font-normal">
               Ver todas <ArrowRight className="w-3 h-3" />
             </Link>
+          </h3>
+          {priorityTasks.length === 0 ? (
+            <div className="flex items-center justify-center h-24 text-gray-400 text-xs">
+              <div className="text-center">
+                <CheckCircle className="w-6 h-6 text-gray-300 mx-auto mb-1" />
+                <p>¡Sin tareas pendientes!</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {priorityTasks.slice(0, 5).map((task) => (
+                <div 
+                  key={task.id}
+                  className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
+                    task.status === 'completed' ? 'bg-green-500 border-green-500' : 
+                    task.priority === 'high' ? 'border-red-400' : 
+                    task.priority === 'medium' ? 'border-yellow-400' : 'border-gray-300'
+                  }`}></div>
+                  <p className={`text-sm flex-1 truncate ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                    {task.title}
+                  </p>
+                  {task.dueDate && isPast(task.dueDate) && !isToday(task.dueDate) && task.status !== 'completed' && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500 text-white font-medium">!</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-3 pt-3 border-t border-gray-100 text-xs flex justify-between">
+            <span className="text-gray-500">Completadas</span>
+            <span className="font-bold text-green-600">{stats.completedTasks} de {stats.totalTasks}</span>
           </div>
-          <div className="p-2 flex-1 overflow-auto max-h-[180px]">
-            {priorityTasks.length === 0 ? (
-              <div className="text-center py-6">
-                <CheckCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-500 text-xs">¡Sin tareas pendientes!</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {priorityTasks.slice(0, 4).map((task) => (
-                  <div 
-                    key={task.id}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
-                  >
-                    <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
-                      task.status === 'completed' ? 'bg-green-500 border-green-500' : 
-                      task.priority === 'high' ? 'border-red-400' : 
-                      task.priority === 'medium' ? 'border-yellow-400' : 'border-gray-300'
-                    }`}></div>
-                    <p className={`text-sm flex-1 truncate ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                      {task.title}
-                    </p>
-                    {task.dueDate && isPast(task.dueDate) && !isToday(task.dueDate) && task.status !== 'completed' && (
-                      <span className="text-[10px] px-1 py-0.5 rounded bg-red-500 text-white">!</span>
-                    )}
+        </div>
+
+        {/* Finanzas del Mes */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="bg-emerald-100 p-1 rounded-lg"><Wallet className="w-4 h-4 text-emerald-600" /></div>
+            <span className="flex-1">Finanzas del Mes</span>
+            <Link href="/dashboard/finances" className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5 font-normal">
+              Ver detalle <ArrowRight className="w-3 h-3" />
+            </Link>
+          </h3>
+          {financeStats.count > 0 || financeStats.income > 0 || financeStats.expenses > 0 ? (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpCircle className="w-3.5 h-3.5 text-green-500" />
+                    <span className="text-xs text-gray-600">Ingresos</span>
                   </div>
-                ))}
+                  <span className="text-sm font-bold text-green-600">${financeStats.income.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ArrowDownCircle className="w-3.5 h-3.5 text-red-500" />
+                    <span className="text-xs text-gray-600">Gastos</span>
+                  </div>
+                  <span className="text-sm font-bold text-red-600">${financeStats.expenses.toLocaleString()}</span>
+                </div>
               </div>
-            )}
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <p className="text-[10px] text-gray-500 mb-0.5">Balance neto</p>
+                <p className={`text-xl font-bold ${financeStats.balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  ${financeStats.balance.toLocaleString()}
+                </p>
+                {financeStats.income > 0 && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    Ahorro: {Math.round(((financeStats.income - financeStats.expenses) / financeStats.income) * 100)}%
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-24 text-gray-400 text-xs">
+              <div className="text-center">
+                <Wallet className="w-6 h-6 text-gray-300 mx-auto mb-1" />
+                <p>Sin transacciones este mes</p>
+              </div>
+            </div>
+          )}
+          <div className="mt-3 pt-3 border-t border-gray-100 text-xs flex justify-between">
+            <span className="text-gray-500">Transacciones</span>
+            <span className="font-bold text-gray-900">{financeStats.count}</span>
           </div>
         </div>
       </div>
