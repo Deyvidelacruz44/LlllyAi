@@ -22,13 +22,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { events, tasks, startDate, endDate } = await request.json();
+    const { events, tasks, finances, startDate, endDate } = await request.json();
 
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-2.0-flash',
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 3000,
       }
     });
 
@@ -52,7 +52,25 @@ export async function POST(request: Request) {
       }, {}),
     };
 
-    const prompt = `Analiza la productividad del usuario basándote en estos datos del ${startDate} al ${endDate}:
+    // Build finance section for prompt
+    let financeSection = '';
+    if (finances) {
+      financeSection = `
+
+RESUMEN FINANCIERO (mes actual):
+- Ingresos mensuales: ${finances.monthlyIncome}
+- Gastos mensuales: ${finances.monthlyExpenses}
+- Balance: ${finances.balance}
+- Tasa de ahorro: ${finances.savingsRate}%
+- Obligaciones mensuales (fijos + deudas): ${finances.totalMonthlyObligations}
+- Deuda total pendiente: ${finances.totalDebtRemaining}
+- Cuentas por cobrar pendientes: ${finances.totalPendingReceivables}
+- Tasa de cobro: ${finances.collectionRate}%
+- Mayor categoría de gasto: ${finances.topExpenseCategory}
+- Gastos por categoría: ${JSON.stringify(finances.expensesByCategory)}`;
+    }
+
+    const prompt = `Analiza la productividad y situación financiera del usuario basándote en estos datos del ${startDate} al ${endDate}:
 
 RESUMEN DE EVENTOS:
 - Total: ${eventsSummary.total}
@@ -63,12 +81,12 @@ RESUMEN DE TAREAS:
 - Completadas: ${tasksSummary.completed}
 - Pendientes: ${tasksSummary.pending}
 - En progreso: ${tasksSummary.inProgress}
-- Por prioridad: ${JSON.stringify(tasksSummary.byPriority)}
+- Por prioridad: ${JSON.stringify(tasksSummary.byPriority)}${financeSection}
 
 Genera un análisis JSON con esta estructura EXACTA (responde SOLO con JSON válido):
 {
-  "productivityScore": <número del 0-100 basado en completación y balance>,
-  "summary": "<resumen breve en 1-2 líneas>",
+  "productivityScore": <número del 0-100 basado en completación, balance y finanzas>,
+  "summary": "<resumen breve en 1-2 líneas que incluya tanto productividad como finanzas>",
   "insights": [
     "<insight breve 1>",
     "<insight breve 2>",
@@ -82,14 +100,20 @@ Genera un análisis JSON con esta estructura EXACTA (responde SOLO con JSON vál
   "patterns": [
     "<patrón identificado 1>",
     "<patrón identificado 2>"
-  ]
+  ]${finances ? `,
+  "financialInsights": [
+    "<observación financiera 1>",
+    "<observación financiera 2>",
+    "<recomendación financiera práctica>"
+  ]` : ''}
 }
 
 Criterios:
-- Puntuación basada en: tasa de completación (40%), balance trabajo/personal (30%), gestión de prioridades (30%)
-- Insights: observaciones específicas sobre los datos
-- Recomendaciones: acciones concretas y alcanzables
+- Puntuación basada en: tasa de completación (30%), balance trabajo/personal (20%), gestión de prioridades (20%), salud financiera (30% si hay datos financieros, 0% si no)
+- Insights: observaciones específicas sobre los datos de productividad
+- Recomendaciones: acciones concretas y alcanzables combinando productividad y finanzas
 - Patrones: tendencias detectadas en la actividad
+${finances ? '- financialInsights: análisis específico de la situación financiera (gastos, ahorro, deudas, cobros)' : ''}
 
 Responde SOLO con el JSON, sin texto adicional ni markdown.`;
 
@@ -115,29 +139,36 @@ Responde SOLO con el JSON, sin texto adicional ni markdown.`;
       analytics.insights = analytics.insights || [];
       analytics.recommendations = analytics.recommendations || [];
       analytics.patterns = analytics.patterns || [];
+      analytics.financialInsights = analytics.financialInsights || [];
       
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
       console.error('Raw response:', response);
       
       // Fallback: generar análisis básico
+      const completionRate = Math.round((tasksSummary.completed / Math.max(tasksSummary.total, 1)) * 100);
       analytics = {
-        productivityScore: Math.round((tasksSummary.completed / Math.max(tasksSummary.total, 1)) * 100),
-        summary: `Has completado ${tasksSummary.completed} de ${tasksSummary.total} tareas y tienes ${eventsSummary.total} eventos programados.`,
+        productivityScore: completionRate,
+        summary: `Has completado ${tasksSummary.completed} de ${tasksSummary.total} tareas y tienes ${eventsSummary.total} eventos.${finances ? ` Balance: ${finances.balance >= 0 ? '+' : ''}${finances.balance}` : ''}`,
         insights: [
-          `Tasa de completación de tareas: ${Math.round((tasksSummary.completed / Math.max(tasksSummary.total, 1)) * 100)}%`,
+          `Tasa de completación: ${completionRate}%`,
           `Total de eventos: ${eventsSummary.total}`,
-          `Tareas pendientes: ${tasksSummary.pending}`
+          `Tareas pendientes: ${tasksSummary.pending}`,
         ],
         recommendations: [
           'Mantén un balance entre trabajo y vida personal',
           'Prioriza las tareas más urgentes',
-          'Programa tiempo para planificación semanal'
+          'Programa tiempo para planificación semanal',
         ],
         patterns: [
           `Tienes ${eventsSummary.total} eventos programados`,
-          `${tasksSummary.completed} tareas completadas de ${tasksSummary.total}`
-        ]
+          `${tasksSummary.completed} tareas completadas de ${tasksSummary.total}`,
+        ],
+        financialInsights: finances ? [
+          `Tasa de ahorro: ${finances.savingsRate}%`,
+          `Obligaciones mensuales: ${finances.totalMonthlyObligations}`,
+          finances.totalPendingReceivables > 0 ? `Cuentas por cobrar pendientes: ${finances.totalPendingReceivables}` : 'Sin cuentas pendientes por cobrar',
+        ] : [],
       };
     }
 
