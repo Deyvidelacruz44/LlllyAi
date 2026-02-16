@@ -121,6 +121,22 @@ service cloud.firestore {
       allow delete: if isDocumentOwner();
     }
     
+    // Debts collection - Deudas y gastos fijos
+    match /debts/{debtId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Receivables collection - Cuentas por cobrar
+    match /receivables/{receivableId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
     // User profiles - Solo el propietario puede acceder
     match /user_profiles/{profileId} {
       allow read: if isSignedIn() && request.auth.uid == profileId;

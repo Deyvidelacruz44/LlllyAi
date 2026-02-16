@@ -142,6 +142,7 @@ export type TransactionCategory =
   | 'salario'
   | 'freelance'
   | 'inversiones'
+  | 'cobros_clientes'
   | 'alimentacion'
   | 'transporte'
   | 'vivienda'
@@ -182,4 +183,91 @@ export interface Budget {
   endDate?: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ========================================
+// Deudas y Gastos Fijos
+// ========================================
+
+export type DebtType = 'fixed_expense' | 'debt';
+export type DebtFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly' | 'one_time';
+export type DebtStatus = 'active' | 'paid' | 'overdue' | 'paused';
+
+export type DebtCategory =
+  | 'alquiler'
+  | 'hipoteca'
+  | 'servicios_basicos'
+  | 'internet_telefono'
+  | 'seguro'
+  | 'suscripcion'
+  | 'prestamo_personal'
+  | 'tarjeta_credito'
+  | 'prestamo_vehiculo'
+  | 'prestamo_estudiantil'
+  | 'impuestos'
+  | 'mantenimiento'
+  | 'membresia'
+  | 'otro_fijo';
+
+export interface Debt {
+  id: string;
+  userId: string;
+  type: DebtType;
+  category: DebtCategory;
+  name: string;
+  description?: string;
+  amount: number;           // Monto del pago periódico
+  totalDebt?: number;       // Deuda total (solo para type=debt)
+  totalPaid?: number;       // Total ya pagado
+  frequency: DebtFrequency;
+  dueDay?: number;          // Día del mes en que vence (1-31)
+  nextDueDate?: Date;
+  startDate: Date;
+  endDate?: Date;           // Fecha fin (para deudas con plazo)
+  status: DebtStatus;
+  creditor?: string;        // A quién se le debe
+  interestRate?: number;    // Tasa de interés anual (%)
+  notes?: string;
+  lastPaidDate?: Date;
+  payments?: DebtPayment[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DebtPayment {
+  id: string;
+  amount: number;
+  date: Date;
+  note?: string;
+}
+
+// ========================================
+// Cuentas por Cobrar
+// ========================================
+
+export type ReceivableStatus = 'pending' | 'partial' | 'paid' | 'overdue' | 'cancelled';
+
+export interface Receivable {
+  id: string;
+  userId: string;
+  debtorName: string;
+  debtorContact?: string;   // Teléfono o email del deudor
+  description: string;
+  totalAmount: number;       // Monto total que deben
+  amountPaid: number;        // Cuánto han pagado
+  dueDate?: Date;
+  status: ReceivableStatus;
+  category?: string;
+  notes?: string;
+  payments?: ReceivablePaymentRecord[];
+  reminders?: Date[];        // Fechas de recordatorios enviados
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ReceivablePaymentRecord {
+  id: string;
+  amount: number;
+  date: Date;
+  note?: string;
 }

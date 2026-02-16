@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
-import { LayoutDashboard, Calendar, CheckSquare, BarChart3, Wallet, LogOut, Menu, X, Sparkles, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Calendar, CheckSquare, BarChart3, Wallet, LogOut, Menu, X, Sparkles, ChevronDown, Receipt, HandCoins } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import FloatingChat from '@/components/FloatingChat';
@@ -32,6 +32,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Calendario', href: '/dashboard/calendar', icon: Calendar, color: 'text-purple-600' },
     { name: 'Tareas', href: '/dashboard/tasks', icon: CheckSquare, color: 'text-green-600' },
     { name: 'Finanzas', href: '/dashboard/finances', icon: Wallet, color: 'text-emerald-600' },
+    { name: 'Deudas', href: '/dashboard/debts', icon: Receipt, color: 'text-rose-600' },
+    { name: 'Cobros', href: '/dashboard/receivables', icon: HandCoins, color: 'text-cyan-600' },
     { name: 'Métricas IA', href: '/dashboard/analytics', icon: BarChart3, color: 'text-orange-600' },
   ];
 

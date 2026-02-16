@@ -1,0 +1,1116 @@
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
+import { Debt, DebtType, DebtCategory, DebtFrequency, DebtStatus } from '@/types';
+import {
+  Plus, Edit2, Trash2, X, Search, TrendingDown, DollarSign,
+  Home, Wifi, Shield, CreditCard, GraduationCap, Car, Wrench,
+  Receipt, AlertCircle, CheckCircle2, Pause, Clock, CalendarDays,
+  ChevronDown, ChevronUp, Filter, BarChart3, Loader2, Banknote,
+  AlertTriangle, CircleDollarSign, Repeat, FileText, Zap
+} from 'lucide-react';
+import { format, differenceInDays, addMonths, addWeeks, addYears, isPast, isToday } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { LucideIcon } from 'lucide-react';
+
+// ==================== CONSTANTS ====================
+
+type ViewMode = 'all' | 'fixed_expense' | 'debt';
+type StatusFilter = 'all' | DebtStatus;
+
+const DEBT_CATEGORY_LABELS: Record<DebtCategory, string> = {
+  alquiler: 'Alquiler',
+  hipoteca: 'Hipoteca',
+  servicios_basicos: 'Servicios Básicos',
+  internet_telefono: 'Internet/Teléfono',
+  seguro: 'Seguros',
+  suscripcion: 'Suscripciones',
+  prestamo_personal: 'Préstamo Personal',
+  tarjeta_credito: 'Tarjeta de Crédito',
+  prestamo_vehiculo: 'Préstamo Vehículo',
+  prestamo_estudiantil: 'Préstamo Estudiantil',
+  impuestos: 'Impuestos',
+  mantenimiento: 'Mantenimiento',
+  membresia: 'Membresía',
+  otro_fijo: 'Otro',
+};
+
+const DEBT_CATEGORY_ICONS: Record<DebtCategory, LucideIcon> = {
+  alquiler: Home,
+  hipoteca: Home,
+  servicios_basicos: Zap,
+  internet_telefono: Wifi,
+  seguro: Shield,
+  suscripcion: Repeat,
+  prestamo_personal: Banknote,
+  tarjeta_credito: CreditCard,
+  prestamo_vehiculo: Car,
+  prestamo_estudiantil: GraduationCap,
+  impuestos: FileText,
+  mantenimiento: Wrench,
+  membresia: Receipt,
+  otro_fijo: DollarSign,
+};
+
+const DEBT_CATEGORY_COLORS: Record<DebtCategory, string> = {
+  alquiler: '#8b5cf6',
+  hipoteca: '#7c3aed',
+  servicios_basicos: '#f59e0b',
+  internet_telefono: '#3b82f6',
+  seguro: '#06b6d4',
+  suscripcion: '#ec4899',
+  prestamo_personal: '#ef4444',
+  tarjeta_credito: '#f43f5e',
+  prestamo_vehiculo: '#f97316',
+  prestamo_estudiantil: '#8b5cf6',
+  impuestos: '#64748b',
+  mantenimiento: '#14b8a6',
+  membresia: '#a855f7',
+  otro_fijo: '#6b7280',
+};
+
+const FREQUENCY_LABELS: Record<DebtFrequency, string> = {
+  weekly: 'Semanal',
+  biweekly: 'Quincenal',
+  monthly: 'Mensual',
+  quarterly: 'Trimestral',
+  yearly: 'Anual',
+  one_time: 'Único',
+};
+
+const STATUS_CONFIG: Record<DebtStatus, { label: string; color: string; bgColor: string; icon: LucideIcon }> = {
+  active: { label: 'Activo', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200', icon: Clock },
+  paid: { label: 'Pagado', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200', icon: CheckCircle2 },
+  overdue: { label: 'Vencido', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200', icon: AlertCircle },
+  paused: { label: 'Pausado', color: 'text-gray-600', bgColor: 'bg-gray-50 border-gray-200', icon: Pause },
+};
+
+const FIXED_EXPENSE_CATEGORIES: DebtCategory[] = [
+  'alquiler', 'hipoteca', 'servicios_basicos', 'internet_telefono',
+  'seguro', 'suscripcion', 'impuestos', 'mantenimiento', 'membresia', 'otro_fijo',
+];
+
+const DEBT_CATEGORIES: DebtCategory[] = [
+  'prestamo_personal', 'tarjeta_credito', 'prestamo_vehiculo',
+  'prestamo_estudiantil', 'otro_fijo',
+];
+
+// ==================== COMPONENT ====================
+
+export default function DebtsPage() {
+  const { user } = useAuth();
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentDebt, setPaymentDebt] = useState<Debt | null>(null);
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentNote, setPaymentNote] = useState('');
+
+  const [formData, setFormData] = useState({
+    type: 'fixed_expense' as DebtType,
+    category: 'servicios_basicos' as DebtCategory,
+    name: '',
+    description: '',
+    amount: '',
+    totalDebt: '',
+    frequency: 'monthly' as DebtFrequency,
+    dueDay: '',
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: '',
+    creditor: '',
+    interestRate: '',
+    notes: '',
+    status: 'active' as DebtStatus,
+  });
+
+  useEffect(() => {
+    if (user) loadDebts();
+  }, [user]);
+
+  // ==================== DATA LOADING ====================
+
+  const loadDebts = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const ref = collection(db, 'debts');
+      const q = query(ref, where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((d) => {
+        const raw = d.data();
+        return {
+          id: d.id,
+          ...raw,
+          startDate: raw.startDate?.toDate(),
+          endDate: raw.endDate?.toDate(),
+          nextDueDate: raw.nextDueDate?.toDate(),
+          lastPaidDate: raw.lastPaidDate?.toDate(),
+          createdAt: raw.createdAt?.toDate(),
+          updatedAt: raw.updatedAt?.toDate(),
+          payments: (raw.payments || []).map((p: Record<string, unknown>) => ({
+            ...p,
+            date: (p.date as { toDate: () => Date })?.toDate?.() || p.date,
+          })),
+        } as Debt;
+      });
+      data.sort((a, b) => {
+        // Overdue first, then by next due date
+        if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+        if (b.status === 'overdue' && a.status !== 'overdue') return 1;
+        const aDate = a.nextDueDate?.getTime() || 0;
+        const bDate = b.nextDueDate?.getTime() || 0;
+        return aDate - bDate;
+      });
+      setDebts(data);
+    } catch (error) {
+      console.error('Error loading debts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==================== CRUD ====================
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      const nextDue = calculateNextDueDate(
+        new Date(formData.startDate + 'T12:00:00'),
+        formData.frequency,
+        formData.dueDay ? parseInt(formData.dueDay) : undefined
+      );
+
+      const debtData: Record<string, unknown> = {
+        userId: user.uid,
+        type: formData.type,
+        category: formData.category,
+        name: formData.name,
+        description: formData.description || null,
+        amount: parseFloat(formData.amount),
+        totalDebt: formData.totalDebt ? parseFloat(formData.totalDebt) : null,
+        totalPaid: editingDebt?.totalPaid || 0,
+        frequency: formData.frequency,
+        dueDay: formData.dueDay ? parseInt(formData.dueDay) : null,
+        nextDueDate: nextDue ? Timestamp.fromDate(nextDue) : null,
+        startDate: Timestamp.fromDate(new Date(formData.startDate + 'T12:00:00')),
+        endDate: formData.endDate ? Timestamp.fromDate(new Date(formData.endDate + 'T12:00:00')) : null,
+        status: formData.status,
+        creditor: formData.creditor || null,
+        interestRate: formData.interestRate ? parseFloat(formData.interestRate) : null,
+        notes: formData.notes || null,
+        updatedAt: Timestamp.now(),
+      };
+
+      if (editingDebt) {
+        await updateDoc(doc(db, 'debts', editingDebt.id), debtData);
+      } else {
+        await addDoc(collection(db, 'debts'), {
+          ...debtData,
+          totalPaid: 0,
+          payments: [],
+          createdAt: Timestamp.now(),
+        });
+      }
+
+      resetForm();
+      loadDebts();
+    } catch (error) {
+      console.error('Error saving debt:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Eliminar este registro?')) return;
+    try {
+      await deleteDoc(doc(db, 'debts', id));
+      loadDebts();
+    } catch (error) {
+      console.error('Error deleting debt:', error);
+    }
+  };
+
+  const handleEdit = (debt: Debt) => {
+    setEditingDebt(debt);
+    setFormData({
+      type: debt.type,
+      category: debt.category,
+      name: debt.name,
+      description: debt.description || '',
+      amount: debt.amount.toString(),
+      totalDebt: debt.totalDebt?.toString() || '',
+      frequency: debt.frequency,
+      dueDay: debt.dueDay?.toString() || '',
+      startDate: format(debt.startDate, 'yyyy-MM-dd'),
+      endDate: debt.endDate ? format(debt.endDate, 'yyyy-MM-dd') : '',
+      creditor: debt.creditor || '',
+      interestRate: debt.interestRate?.toString() || '',
+      notes: debt.notes || '',
+      status: debt.status,
+    });
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      type: 'fixed_expense', category: 'servicios_basicos', name: '', description: '',
+      amount: '', totalDebt: '', frequency: 'monthly', dueDay: '',
+      startDate: format(new Date(), 'yyyy-MM-dd'), endDate: '',
+      creditor: '', interestRate: '', notes: '', status: 'active',
+    });
+    setEditingDebt(null);
+    setShowModal(false);
+  };
+
+  // ==================== PAYMENT RECORDING ====================
+
+  const openPaymentModal = (debt: Debt) => {
+    setPaymentDebt(debt);
+    setPaymentAmount(debt.amount.toString());
+    setPaymentNote('');
+    setShowPaymentModal(true);
+  };
+
+  const handleRecordPayment = async () => {
+    if (!paymentDebt || !paymentAmount) return;
+    const amount = parseFloat(paymentAmount);
+
+    try {
+      const newPayment = {
+        id: Date.now().toString(),
+        amount,
+        date: Timestamp.now(),
+        note: paymentNote || null,
+      };
+
+      const currentPayments = paymentDebt.payments || [];
+      const newTotalPaid = (paymentDebt.totalPaid || 0) + amount;
+      const nextDue = calculateNextDueDate(
+        new Date(),
+        paymentDebt.frequency,
+        paymentDebt.dueDay
+      );
+
+      const isDebtPaidOff = paymentDebt.type === 'debt' &&
+        paymentDebt.totalDebt &&
+        newTotalPaid >= paymentDebt.totalDebt;
+
+      await updateDoc(doc(db, 'debts', paymentDebt.id), {
+        payments: [...currentPayments.map(p => ({
+          ...p,
+          date: p.date instanceof Date ? Timestamp.fromDate(p.date) : p.date,
+        })), newPayment],
+        totalPaid: newTotalPaid,
+        lastPaidDate: Timestamp.now(),
+        nextDueDate: nextDue ? Timestamp.fromDate(nextDue) : null,
+        status: isDebtPaidOff ? 'paid' : 'active',
+        updatedAt: Timestamp.now(),
+      });
+
+      setShowPaymentModal(false);
+      setPaymentDebt(null);
+      loadDebts();
+    } catch (error) {
+      console.error('Error recording payment:', error);
+    }
+  };
+
+  const toggleStatus = async (debt: Debt, newStatus: DebtStatus) => {
+    try {
+      await updateDoc(doc(db, 'debts', debt.id), {
+        status: newStatus,
+        updatedAt: Timestamp.now(),
+      });
+      loadDebts();
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  // ==================== HELPERS ====================
+
+  const calculateNextDueDate = (
+    fromDate: Date,
+    frequency: DebtFrequency,
+    dueDay?: number
+  ): Date | null => {
+    if (frequency === 'one_time') return null;
+    const now = new Date();
+    let next = fromDate;
+
+    while (next <= now) {
+      switch (frequency) {
+        case 'weekly': next = addWeeks(next, 1); break;
+        case 'biweekly': next = addWeeks(next, 2); break;
+        case 'monthly': next = addMonths(next, 1); break;
+        case 'quarterly': next = addMonths(next, 3); break;
+        case 'yearly': next = addYears(next, 1); break;
+      }
+    }
+
+    if (dueDay && (frequency === 'monthly' || frequency === 'quarterly')) {
+      const d = new Date(next);
+      d.setDate(Math.min(dueDay, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+      return d;
+    }
+
+    return next;
+  };
+
+  const getDaysUntilDue = (debt: Debt): number | null => {
+    if (!debt.nextDueDate) return null;
+    return differenceInDays(debt.nextDueDate, new Date());
+  };
+
+  const getDueStatus = (debt: Debt): 'ok' | 'soon' | 'due' | 'overdue' => {
+    const days = getDaysUntilDue(debt);
+    if (days === null) return 'ok';
+    if (days < 0) return 'overdue';
+    if (days === 0) return 'due';
+    if (days <= 5) return 'soon';
+    return 'ok';
+  };
+
+  // ==================== FILTERING ====================
+
+  const filteredDebts = useMemo(() => {
+    let filtered = [...debts];
+
+    if (viewMode !== 'all') filtered = filtered.filter(d => d.type === viewMode);
+    if (statusFilter !== 'all') filtered = filtered.filter(d => d.status === statusFilter);
+    if (searchQuery) {
+      const term = searchQuery.toLowerCase();
+      filtered = filtered.filter(d =>
+        d.name.toLowerCase().includes(term) ||
+        (d.creditor?.toLowerCase().includes(term)) ||
+        (d.description?.toLowerCase().includes(term)) ||
+        DEBT_CATEGORY_LABELS[d.category].toLowerCase().includes(term)
+      );
+    }
+
+    return filtered;
+  }, [debts, viewMode, statusFilter, searchQuery]);
+
+  // ==================== STATS ====================
+
+  const stats = useMemo(() => {
+    const active = debts.filter(d => d.status === 'active' || d.status === 'overdue');
+    const fixedExpenses = active.filter(d => d.type === 'fixed_expense');
+    const debtItems = active.filter(d => d.type === 'debt');
+    const overdue = active.filter(d => d.status === 'overdue');
+
+    const monthlyFixed = fixedExpenses.reduce((sum, d) => {
+      switch (d.frequency) {
+        case 'weekly': return sum + d.amount * 4.33;
+        case 'biweekly': return sum + d.amount * 2.17;
+        case 'monthly': return sum + d.amount;
+        case 'quarterly': return sum + d.amount / 3;
+        case 'yearly': return sum + d.amount / 12;
+        default: return sum;
+      }
+    }, 0);
+
+    const monthlyDebt = debtItems.reduce((sum, d) => {
+      switch (d.frequency) {
+        case 'weekly': return sum + d.amount * 4.33;
+        case 'biweekly': return sum + d.amount * 2.17;
+        case 'monthly': return sum + d.amount;
+        case 'quarterly': return sum + d.amount / 3;
+        case 'yearly': return sum + d.amount / 12;
+        default: return sum + d.amount;
+      }
+    }, 0);
+
+    const totalDebtRemaining = debtItems.reduce((sum, d) => {
+      if (d.totalDebt) return sum + (d.totalDebt - (d.totalPaid || 0));
+      return sum;
+    }, 0);
+
+    const upcomingDue = active.filter(d => {
+      const days = getDaysUntilDue(d);
+      return days !== null && days >= 0 && days <= 7;
+    });
+
+    return {
+      totalMonthly: monthlyFixed + monthlyDebt,
+      monthlyFixed,
+      monthlyDebt,
+      totalDebtRemaining,
+      activeCount: active.length,
+      overdueCount: overdue.length,
+      fixedCount: fixedExpenses.length,
+      debtCount: debtItems.length,
+      upcomingDue,
+    };
+  }, [debts]);
+
+  // ==================== RENDER ====================
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
+          <p className="text-sm text-gray-500">Cargando deudas y gastos fijos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-4">
+
+      {/* ========== STATS CARDS ========== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-rose-50">
+              <TrendingDown className="w-4 h-4 text-rose-500" />
+            </div>
+            <span className="text-[10px] text-gray-500 uppercase font-medium">Total Mensual</span>
+          </div>
+          <p className="text-xl font-bold text-gray-900">${Math.round(stats.totalMonthly).toLocaleString()}</p>
+          <p className="text-[10px] text-gray-400 mt-1">{stats.activeCount} obligaciones activas</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-purple-50">
+              <Home className="w-4 h-4 text-purple-500" />
+            </div>
+            <span className="text-[10px] text-gray-500 uppercase font-medium">Gastos Fijos</span>
+          </div>
+          <p className="text-xl font-bold text-gray-900">${Math.round(stats.monthlyFixed).toLocaleString()}</p>
+          <p className="text-[10px] text-gray-400 mt-1">{stats.fixedCount} gastos fijos</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-red-50">
+              <CreditCard className="w-4 h-4 text-red-500" />
+            </div>
+            <span className="text-[10px] text-gray-500 uppercase font-medium">Cuotas Deuda</span>
+          </div>
+          <p className="text-xl font-bold text-gray-900">${Math.round(stats.monthlyDebt).toLocaleString()}</p>
+          <p className="text-[10px] text-gray-400 mt-1">{stats.debtCount} deudas</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 rounded-lg bg-amber-50">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            </div>
+            <span className="text-[10px] text-gray-500 uppercase font-medium">Deuda Total</span>
+          </div>
+          <p className="text-xl font-bold text-gray-900">${Math.round(stats.totalDebtRemaining).toLocaleString()}</p>
+          {stats.overdueCount > 0 && (
+            <p className="text-[10px] text-red-500 mt-1 font-medium">{stats.overdueCount} vencidas</p>
+          )}
+          {stats.overdueCount === 0 && (
+            <p className="text-[10px] text-green-500 mt-1">Todo al día</p>
+          )}
+        </div>
+      </div>
+
+      {/* ========== UPCOMING DUE ALERT ========== */}
+      {stats.upcomingDue.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarDays className="w-4 h-4 text-amber-600" />
+            <span className="text-xs font-bold text-amber-800">Próximos Vencimientos (7 días)</span>
+          </div>
+          <div className="space-y-1">
+            {stats.upcomingDue.map(d => {
+              const days = getDaysUntilDue(d);
+              return (
+                <div key={d.id} className="flex items-center justify-between text-xs">
+                  <span className="text-amber-700">{d.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-amber-800">${d.amount.toLocaleString()}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                      days === 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {days === 0 ? 'HOY' : `${days} días`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ========== TOOLBAR ========== */}
+      <div className="flex flex-col gap-2">
+        {/* Type filter + Actions */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg flex-1">
+            {([
+              { value: 'all' as ViewMode, label: 'Todos' },
+              { value: 'fixed_expense' as ViewMode, label: 'Gastos Fijos' },
+              { value: 'debt' as ViewMode, label: 'Deudas' },
+            ]).map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setViewMode(tab.value)}
+                className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
+                  viewMode === tab.value
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-1.5">
+            <button onClick={() => setShowSearch(!showSearch)}
+              className={`p-2 rounded-lg border transition-colors ${showSearch ? 'bg-gray-100 border-gray-300' : 'border-gray-200 hover:bg-gray-50'}`}>
+              <Search className="w-4 h-4 text-gray-500" />
+            </button>
+            <button onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors text-xs font-medium shadow-sm">
+              <Plus className="w-4 h-4" /> Agregar
+            </button>
+          </div>
+        </div>
+
+        {/* Search */}
+        {showSearch && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nombre, acreedor..."
+              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent" />
+          </div>
+        )}
+
+        {/* Status filter */}
+        <div className="flex gap-1 flex-wrap">
+          {(['all', 'active', 'overdue', 'paid', 'paused'] as StatusFilter[]).map((s) => (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-medium border transition-all ${
+                statusFilter === s
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+              }`}>
+              {s === 'all' ? 'Todos' : STATUS_CONFIG[s as DebtStatus].label}
+              {s !== 'all' && ` (${debts.filter(d => d.status === s).length})`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ========== DEBT LIST ========== */}
+      {filteredDebts.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm border">
+          <CircleDollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-gray-600 mb-1">No hay registros</h3>
+          <p className="text-xs text-gray-400 mb-4">
+            {viewMode === 'fixed_expense' ? 'Agrega tus gastos fijos mensuales' :
+             viewMode === 'debt' ? 'Registra tus deudas para llevar el control' :
+             'Comienza agregando deudas o gastos fijos'}
+          </p>
+          <button onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors text-xs font-medium">
+            <Plus className="w-4 h-4" /> Agregar
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredDebts.map((debt) => {
+            const CatIcon = DEBT_CATEGORY_ICONS[debt.category] || DollarSign;
+            const catColor = DEBT_CATEGORY_COLORS[debt.category];
+            const dueStatus = getDueStatus(debt);
+            const daysLeft = getDaysUntilDue(debt);
+            const debtProgress = debt.type === 'debt' && debt.totalDebt
+              ? Math.round(((debt.totalPaid || 0) / debt.totalDebt) * 100)
+              : null;
+            const isExpanded = expandedId === debt.id;
+            const StatusIcon = STATUS_CONFIG[debt.status].icon;
+
+            return (
+              <div key={debt.id} className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                {/* Main Row */}
+                <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setExpandedId(isExpanded ? null : debt.id)}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: catColor + '15' }}>
+                    <CatIcon className="w-5 h-5" style={{ color: catColor }} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-medium text-gray-900 truncate">{debt.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${STATUS_CONFIG[debt.status].bgColor} ${STATUS_CONFIG[debt.status].color}`}>
+                        <StatusIcon className="w-2.5 h-2.5" />
+                        {STATUS_CONFIG[debt.status].label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                      <span>{DEBT_CATEGORY_LABELS[debt.category]}</span>
+                      <span>•</span>
+                      <span>{FREQUENCY_LABELS[debt.frequency]}</span>
+                      {debt.creditor && (
+                        <>
+                          <span>•</span>
+                          <span>{debt.creditor}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-gray-900">${debt.amount.toLocaleString()}</p>
+                    {debt.nextDueDate && debt.status === 'active' && (
+                      <p className={`text-[10px] font-medium ${
+                        dueStatus === 'overdue' ? 'text-red-500' :
+                        dueStatus === 'due' ? 'text-red-500' :
+                        dueStatus === 'soon' ? 'text-amber-500' : 'text-gray-400'
+                      }`}>
+                        {dueStatus === 'overdue' ? `Vencido hace ${Math.abs(daysLeft!)} días` :
+                         dueStatus === 'due' ? 'Vence HOY' :
+                         dueStatus === 'soon' ? `En ${daysLeft} días` :
+                         format(debt.nextDueDate, 'dd MMM', { locale: es })}
+                      </p>
+                    )}
+                  </div>
+
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                </div>
+
+                {/* Debt Progress Bar */}
+                {debtProgress !== null && (
+                  <div className="px-4 pb-2">
+                    <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                      <span>Pagado: ${(debt.totalPaid || 0).toLocaleString()}</span>
+                      <span>Total: ${(debt.totalDebt || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-700 ${
+                        debtProgress >= 100 ? 'bg-green-500' : debtProgress >= 75 ? 'bg-blue-500' : 'bg-rose-500'
+                      }`} style={{ width: `${Math.min(debtProgress, 100)}%` }} />
+                    </div>
+                    <p className="text-[10px] text-right mt-0.5 font-medium" style={{ color: catColor }}>
+                      {debtProgress}% completado
+                    </p>
+                  </div>
+                )}
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="border-t px-4 py-3 bg-gray-50 space-y-3">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      {debt.description && (
+                        <div className="col-span-2">
+                          <span className="text-gray-400 text-[10px] uppercase">Descripción</span>
+                          <p className="text-gray-700">{debt.description}</p>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-gray-400 text-[10px] uppercase">Inicio</span>
+                        <p className="text-gray-700">{format(debt.startDate, 'dd MMM yyyy', { locale: es })}</p>
+                      </div>
+                      {debt.endDate && (
+                        <div>
+                          <span className="text-gray-400 text-[10px] uppercase">Fin</span>
+                          <p className="text-gray-700">{format(debt.endDate, 'dd MMM yyyy', { locale: es })}</p>
+                        </div>
+                      )}
+                      {debt.interestRate && (
+                        <div>
+                          <span className="text-gray-400 text-[10px] uppercase">Tasa de Interés</span>
+                          <p className="text-gray-700">{debt.interestRate}% anual</p>
+                        </div>
+                      )}
+                      {debt.dueDay && (
+                        <div>
+                          <span className="text-gray-400 text-[10px] uppercase">Día de Vencimiento</span>
+                          <p className="text-gray-700">Día {debt.dueDay} de cada mes</p>
+                        </div>
+                      )}
+                      {debt.notes && (
+                        <div className="col-span-2">
+                          <span className="text-gray-400 text-[10px] uppercase">Notas</span>
+                          <p className="text-gray-700">{debt.notes}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recent Payments */}
+                    {debt.payments && debt.payments.length > 0 && (
+                      <div>
+                        <span className="text-gray-400 text-[10px] uppercase">Últimos Pagos</span>
+                        <div className="mt-1 space-y-1">
+                          {debt.payments.slice(-3).reverse().map((p, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs bg-white p-2 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                                <span className="text-gray-600">
+                                  {p.date instanceof Date ? format(p.date, 'dd MMM yyyy', { locale: es }) : 'Fecha'}
+                                </span>
+                              </div>
+                              <span className="font-bold text-green-600">${p.amount.toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-1">
+                      {debt.status === 'active' && (
+                        <button onClick={(e) => { e.stopPropagation(); openPaymentModal(debt); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Registrar Pago
+                        </button>
+                      )}
+                      {debt.status === 'active' && (
+                        <button onClick={(e) => { e.stopPropagation(); toggleStatus(debt, 'paused'); }}
+                          className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-xs font-medium">
+                          <Pause className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {debt.status === 'paused' && (
+                        <button onClick={(e) => { e.stopPropagation(); toggleStatus(debt, 'active'); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">
+                          <Clock className="w-3.5 h-3.5" /> Reactivar
+                        </button>
+                      )}
+                      <button onClick={(e) => { e.stopPropagation(); handleEdit(debt); }}
+                        className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(debt.id); }}
+                        className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-medium">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ========== MONTHLY BREAKDOWN ========== */}
+      {debts.filter(d => d.status === 'active').length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart3 className="w-4 h-4 text-gray-600" />
+            <h3 className="text-sm font-bold text-gray-900">Desglose Mensual por Categoría</h3>
+          </div>
+          <div className="space-y-2">
+            {(() => {
+              const categoryTotals: Record<string, { amount: number; count: number }> = {};
+              debts.filter(d => d.status === 'active').forEach(d => {
+                let monthly = d.amount;
+                switch (d.frequency) {
+                  case 'weekly': monthly = d.amount * 4.33; break;
+                  case 'biweekly': monthly = d.amount * 2.17; break;
+                  case 'quarterly': monthly = d.amount / 3; break;
+                  case 'yearly': monthly = d.amount / 12; break;
+                }
+                if (!categoryTotals[d.category]) categoryTotals[d.category] = { amount: 0, count: 0 };
+                categoryTotals[d.category].amount += monthly;
+                categoryTotals[d.category].count++;
+              });
+              const sorted = Object.entries(categoryTotals).sort(([, a], [, b]) => b.amount - a.amount);
+              const maxAmount = sorted.length > 0 ? sorted[0][1].amount : 1;
+
+              return sorted.map(([cat, data]) => {
+                const CatIcon = DEBT_CATEGORY_ICONS[cat as DebtCategory] || DollarSign;
+                const color = DEBT_CATEGORY_COLORS[cat as DebtCategory] || '#6b7280';
+                const pct = Math.round((data.amount / maxAmount) * 100);
+                return (
+                  <div key={cat} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: color + '15' }}>
+                      <CatIcon className="w-4 h-4" style={{ color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs text-gray-700">{DEBT_CATEGORY_LABELS[cat as DebtCategory]}</span>
+                        <span className="text-xs font-bold text-gray-900">${Math.round(data.amount).toLocaleString()}/mes</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          <div className="mt-3 pt-3 border-t flex items-center justify-between">
+            <span className="text-xs text-gray-500">Total mensual estimado</span>
+            <span className="text-sm font-bold text-gray-900">${Math.round(stats.totalMonthly).toLocaleString()}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ========== CREATE/EDIT MODAL ========== */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={resetForm}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                {editingDebt ? 'Editar Registro' : 'Nueva Deuda / Gasto Fijo'}
+              </h3>
+              <button onClick={resetForm} className="text-gray-400 hover:text-gray-700 p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Type Selector */}
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setFormData({ ...formData, type: 'fixed_expense', category: 'servicios_basicos' })}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
+                    formData.type === 'fixed_expense' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}>
+                  <Home className="w-4 h-4" /> Gasto Fijo
+                </button>
+                <button type="button" onClick={() => setFormData({ ...formData, type: 'debt', category: 'prestamo_personal' })}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
+                    formData.type === 'debt' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}>
+                  <CreditCard className="w-4 h-4" /> Deuda
+                </button>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+                <input type="text" value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required placeholder={formData.type === 'fixed_expense' ? 'Ej: Alquiler departamento' : 'Ej: Préstamo banco'}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm" />
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  {formData.type === 'debt' ? 'Monto de Cuota' : 'Monto'}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
+                  <input type="number" step="0.01" min="0" value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    required placeholder="0.00"
+                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent text-lg font-bold" />
+                </div>
+              </div>
+
+              {/* Total Debt (only for debts) */}
+              {formData.type === 'debt' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Deuda Total</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                    <input type="number" step="0.01" min="0" value={formData.totalDebt}
+                      onChange={(e) => setFormData({ ...formData, totalDebt: e.target.value })}
+                      placeholder="Total de la deuda"
+                      className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm" />
+                  </div>
+                </div>
+              )}
+
+              {/* Category - Grid */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
+                <div className="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1">
+                  {(formData.type === 'fixed_expense' ? FIXED_EXPENSE_CATEGORIES : DEBT_CATEGORIES).map((cat) => {
+                    const CatIcon = DEBT_CATEGORY_ICONS[cat] || DollarSign;
+                    return (
+                      <button key={cat} type="button" onClick={() => setFormData({ ...formData, category: cat })}
+                        className={`flex flex-col items-center gap-0.5 p-2 rounded-lg border text-[10px] transition-all ${
+                          formData.category === cat
+                            ? 'border-rose-500 bg-rose-50 text-rose-700 font-medium'
+                            : 'border-gray-100 text-gray-500 hover:border-gray-200 hover:bg-gray-50'
+                        }`}>
+                        <CatIcon className="w-4 h-4" />
+                        {DEBT_CATEGORY_LABELS[cat]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Frequency & Due Day */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Frecuencia</label>
+                  <select value={formData.frequency}
+                    onChange={(e) => setFormData({ ...formData, frequency: e.target.value as DebtFrequency })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm">
+                    {Object.entries(FREQUENCY_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Día de Vencimiento</label>
+                  <input type="number" min="1" max="31" value={formData.dueDay}
+                    onChange={(e) => setFormData({ ...formData, dueDay: e.target.value })}
+                    placeholder="1-31"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
+                </div>
+              </div>
+
+              {/* Creditor & Interest */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Acreedor</label>
+                  <input type="text" value={formData.creditor}
+                    onChange={(e) => setFormData({ ...formData, creditor: e.target.value })}
+                    placeholder="Banco, persona..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
+                </div>
+                {formData.type === 'debt' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Interés (%)</label>
+                    <input type="number" step="0.01" min="0" value={formData.interestRate}
+                      onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
+                  </div>
+                )}
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Fecha Inicio</label>
+                  <input type="date" value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    required className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Fecha Fin (opcional)</label>
+                  <input type="date" value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Descripción (opcional)</label>
+                <input type="text" value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Detalles adicionales..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Notas (opcional)</label>
+                <textarea value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Notas..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm resize-none" />
+              </div>
+
+              {/* Status (when editing) */}
+              {editingDebt && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Estado</label>
+                  <select value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as DebtStatus })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm">
+                    <option value="active">Activo</option>
+                    <option value="paid">Pagado</option>
+                    <option value="paused">Pausado</option>
+                    <option value="overdue">Vencido</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Submit */}
+              <div className="flex gap-2 pt-2">
+                <button type="submit"
+                  className="flex-1 bg-rose-600 text-white py-2.5 rounded-xl hover:bg-rose-700 transition-colors font-medium text-sm">
+                  {editingDebt ? 'Actualizar' : 'Registrar'}
+                </button>
+                <button type="button" onClick={resetForm}
+                  className="px-5 bg-gray-100 text-gray-600 py-2.5 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========== PAYMENT MODAL ========== */}
+      {showPaymentModal && paymentDebt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPaymentModal(false)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Registrar Pago</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-700 p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-3 mb-4">
+              <p className="text-sm font-medium text-gray-900">{paymentDebt.name}</p>
+              <p className="text-xs text-gray-500">Cuota: ${paymentDebt.amount.toLocaleString()}</p>
+              {paymentDebt.totalDebt && (
+                <p className="text-xs text-gray-500">
+                  Pendiente: ${((paymentDebt.totalDebt || 0) - (paymentDebt.totalPaid || 0)).toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Monto del Pago</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
+                  <input type="number" step="0.01" min="0" value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg font-bold" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nota (opcional)</label>
+                <input type="text" value={paymentNote}
+                  onChange={(e) => setPaymentNote(e.target.value)}
+                  placeholder="Ej: Pago mensual"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 text-sm" />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button onClick={handleRecordPayment}
+                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2.5 rounded-xl hover:bg-green-700 transition-colors font-medium text-sm">
+                  <CheckCircle2 className="w-4 h-4" /> Confirmar Pago
+                </button>
+                <button onClick={() => setShowPaymentModal(false)}
+                  className="px-5 bg-gray-100 text-gray-600 py-2.5 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

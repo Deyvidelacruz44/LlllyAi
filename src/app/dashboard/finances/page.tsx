@@ -11,7 +11,7 @@ import {
   Filter, Brain, Loader2, RefreshCw, Target, AlertCircle, Award,
   Calendar as CalendarIcon, Download, Repeat, ChevronUp, ChevronDown,
   Zap, Coffee, ShoppingCart, Car, Home, Lightbulb, CreditCard,
-  BarChart3, PieChart, Receipt, Banknote, ArrowRight, Info
+  BarChart3, PieChart, Receipt, Banknote, ArrowRight, Info, HandCoins
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, isWithinInterval, eachDayOfInterval, isSameDay, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,6 +29,7 @@ const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   salario: 'Salario',
   freelance: 'Freelance',
   inversiones: 'Inversiones',
+  cobros_clientes: 'Cobros Clientes',
   alimentacion: 'Alimentación',
   transporte: 'Transporte',
   vivienda: 'Vivienda',
@@ -48,6 +49,7 @@ const CATEGORY_COLORS: Record<TransactionCategory, string> = {
   salario: 'bg-green-100 text-green-800 border-green-200',
   freelance: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   inversiones: 'bg-blue-100 text-blue-800 border-blue-200',
+  cobros_clientes: 'bg-cyan-100 text-cyan-800 border-cyan-200',
   alimentacion: 'bg-orange-100 text-orange-800 border-orange-200',
   transporte: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   vivienda: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -65,6 +67,7 @@ const CATEGORY_COLORS: Record<TransactionCategory, string> = {
 
 const CATEGORY_ACCENT: Record<TransactionCategory, string> = {
   salario: '#22c55e', freelance: '#10b981', inversiones: '#3b82f6',
+  cobros_clientes: '#0891b2',
   alimentacion: '#f97316', transporte: '#eab308', vivienda: '#a855f7',
   servicios: '#6366f1', entretenimiento: '#ec4899', salud: '#ef4444',
   educacion: '#06b6d4', ropa: '#d946ef', tecnologia: '#64748b',
@@ -75,9 +78,10 @@ const CATEGORY_ICONS: Partial<Record<TransactionCategory, LucideIcon>> = {
   alimentacion: Coffee, transporte: Car, vivienda: Home,
   servicios: Lightbulb, entretenimiento: Zap, salud: Target,
   tecnologia: CreditCard, salario: Banknote, deuda: Receipt,
+  cobros_clientes: HandCoins,
 };
 
-const INCOME_CATEGORIES: TransactionCategory[] = ['salario', 'freelance', 'inversiones', 'regalo', 'otro'];
+const INCOME_CATEGORIES: TransactionCategory[] = ['salario', 'freelance', 'inversiones', 'cobros_clientes', 'regalo', 'otro'];
 const EXPENSE_CATEGORIES: TransactionCategory[] = [
   'alimentacion', 'transporte', 'vivienda', 'servicios', 'entretenimiento',
   'salud', 'educacion', 'ropa', 'tecnologia', 'ahorro', 'deuda', 'regalo', 'otro',
