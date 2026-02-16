@@ -12,6 +12,7 @@ import FloatingChat from '@/components/FloatingChat';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [financeOpen, setFinanceOpen] = useState(false);
   const { user, logout } = useAuth();
   const pathname = usePathname();
   
@@ -31,11 +32,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Panel', href: '/dashboard/overview', icon: LayoutDashboard, color: 'text-blue-600' },
     { name: 'Calendario', href: '/dashboard/calendar', icon: Calendar, color: 'text-purple-600' },
     { name: 'Tareas', href: '/dashboard/tasks', icon: CheckSquare, color: 'text-green-600' },
-    { name: 'Finanzas', href: '/dashboard/finances', icon: Wallet, color: 'text-emerald-600' },
-    { name: 'Deudas', href: '/dashboard/debts', icon: Receipt, color: 'text-rose-600' },
-    { name: 'Cobros', href: '/dashboard/receivables', icon: HandCoins, color: 'text-cyan-600' },
     { name: 'Métricas IA', href: '/dashboard/analytics', icon: BarChart3, color: 'text-orange-600' },
   ];
+
+  const financeSubItems = [
+    { name: 'Resumen', href: '/dashboard/finances', icon: Wallet },
+    { name: 'Deudas', href: '/dashboard/debts', icon: Receipt },
+    { name: 'Cobros', href: '/dashboard/receivables', icon: HandCoins },
+  ];
+
+  const isFinanceActive = pathname.startsWith('/dashboard/finances') ||
+    pathname.startsWith('/dashboard/debts') ||
+    pathname.startsWith('/dashboard/receivables');
+
+  // Auto-open finance submenu when on a finance page
+  useEffect(() => {
+    if (isFinanceActive) setFinanceOpen(true);
+  }, [isFinanceActive]);
 
   const handleLogout = async () => {
     try {
@@ -120,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Navigation */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-              {navigation.map((item, index) => {
+              {navigation.slice(0, 3).map((item, index) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
@@ -134,6 +147,85 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                     style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className={`p-2 rounded-lg transition-all ${
+                      isActive 
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md' 
+                        : 'bg-gray-100 group-hover:bg-gray-200'
+                    }`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium">{item.name}</span>
+                    {isActive && (
+                      <div className="ml-auto w-1.5 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
+                    )}
+                  </Link>
+                );
+              })}
+
+              {/* Finanzas collapsible group */}
+              <div>
+                <button
+                  onClick={() => setFinanceOpen(!financeOpen)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                    isFinanceActive
+                      ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-700 shadow-sm border border-emerald-100'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg transition-all ${
+                    isFinanceActive
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                      : 'bg-gray-100 group-hover:bg-gray-200'
+                  }`}>
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <span className="font-medium">Finanzas</span>
+                  <ChevronDown className={`ml-auto w-4 h-4 transition-transform duration-200 ${financeOpen ? 'rotate-180' : ''} ${isFinanceActive ? 'text-emerald-500' : 'text-gray-400'}`} />
+                </button>
+
+                {financeOpen && (
+                  <div className="mt-1 ml-4 pl-4 border-l-2 border-gray-100 space-y-0.5">
+                    {financeSubItems.map((sub) => {
+                      const SubIcon = sub.icon;
+                      const isSubActive = pathname === sub.href;
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
+                            isSubActive
+                              ? 'bg-emerald-50 text-emerald-700 font-medium'
+                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                          }`}
+                        >
+                          <SubIcon className={`w-4 h-4 ${isSubActive ? 'text-emerald-600' : 'text-gray-400'}`} />
+                          <span>{sub.name}</span>
+                          {isSubActive && (
+                            <div className="ml-auto w-1 h-4 bg-emerald-500 rounded-full" />
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {navigation.slice(3).map((item, index) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                      isActive
+                        ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-700 shadow-sm border border-blue-100'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                    style={{ animationDelay: `${(index + 4) * 50}ms` }}
                   >
                     <div className={`p-2 rounded-lg transition-all ${
                       isActive 
@@ -175,7 +267,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </button>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    {navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
+                    {navigation.find((item) => item.href === pathname)?.name || financeSubItems.find((item) => item.href === pathname)?.name || 'Dashboard'}
                   </h2>
                   <p className="text-sm text-gray-500 hidden sm:block">
                     {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
