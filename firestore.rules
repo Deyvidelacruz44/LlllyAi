@@ -105,6 +105,22 @@ service cloud.firestore {
       allow delete: if isDocumentOwner();
     }
     
+    // Transactions collection - Solo el propietario puede acceder
+    match /transactions/{transactionId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // Budgets collection - Solo el propietario puede acceder
+    match /budgets/{budgetId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
     // User profiles - Solo el propietario puede acceder
     match /user_profiles/{profileId} {
       allow read: if isSignedIn() && request.auth.uid == profileId;

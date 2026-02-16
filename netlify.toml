@@ -6,3 +6,7 @@
 # Plugin de Next.js para Netlify
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Fix Windows backslash paths that cause octal escape errors in ESM
+[[plugins]]
+  package = "./netlify-plugins/fix-handler-paths"

@@ -7,8 +7,9 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { 
   Calendar, ListTodo, CheckCircle, Clock, AlertCircle,
   BarChart3, ArrowRight, Sparkles, CalendarClock, Loader2, Brain,
-  Zap, Award, Target, LucideIcon
+  Zap, Award, Target, LucideIcon, Wallet, ArrowUpCircle, ArrowDownCircle, TrendingUp
 } from 'lucide-react';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { format, isToday, isTomorrow, isPast, isThisWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
@@ -65,6 +66,7 @@ export default function OverviewPage() {
   });
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [priorityTasks, setPriorityTasks] = useState<Task[]>([]);
+  const [financeStats, setFinanceStats] = useState({ income: 0, expenses: 0, balance: 0, count: 0 });
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [aiSummary, setAiSummary] = useState<string>('');
 
@@ -143,6 +145,29 @@ export default function OverviewPage() {
         totalEvents: events.length,
         totalTasks: tasks.length,
       });
+
+      // Load finance stats for current month
+      try {
+        const txRef = collection(db, 'transactions');
+        const txQuery = query(txRef, where('userId', '==', user.uid));
+        const txSnapshot = await getDocs(txQuery);
+        const now = new Date();
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+        let monthIncome = 0, monthExpenses = 0, monthCount = 0;
+        txSnapshot.docs.forEach((d) => {
+          const raw = d.data();
+          const date = raw.date?.toDate();
+          if (date && isWithinInterval(date, { start: monthStart, end: monthEnd })) {
+            monthCount++;
+            if (raw.type === 'income') monthIncome += raw.amount || 0;
+            else if (raw.type === 'expense') monthExpenses += raw.amount || 0;
+          }
+        });
+        setFinanceStats({ income: monthIncome, expenses: monthExpenses, balance: monthIncome - monthExpenses, count: monthCount });
+      } catch (err) {
+        console.error('Error loading finance stats:', err);
+      }
 
       // Próximos 5 eventos
       const upcoming = events
@@ -450,6 +475,38 @@ export default function OverviewPage() {
           );
         })}
       </div>
+
+      {/* Finance Widget */}
+      {(financeStats.count > 0 || financeStats.income > 0 || financeStats.expenses > 0) && (
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <Wallet className="w-4 h-4 text-emerald-600" />
+              <h2 className="text-sm font-semibold text-gray-900">Finanzas del Mes</h2>
+            </div>
+            <Link href="/dashboard/finances" className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5">
+              Ver detalle <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white/70 rounded-lg p-2 text-center">
+              <ArrowUpCircle className="w-4 h-4 text-green-500 mx-auto mb-0.5" />
+              <p className="text-sm font-bold text-green-600">${financeStats.income.toLocaleString()}</p>
+              <p className="text-[10px] text-gray-500">Ingresos</p>
+            </div>
+            <div className="bg-white/70 rounded-lg p-2 text-center">
+              <ArrowDownCircle className="w-4 h-4 text-red-500 mx-auto mb-0.5" />
+              <p className="text-sm font-bold text-red-600">${financeStats.expenses.toLocaleString()}</p>
+              <p className="text-[10px] text-gray-500">Gastos</p>
+            </div>
+            <div className="bg-white/70 rounded-lg p-2 text-center">
+              <TrendingUp className="w-4 h-4 text-blue-500 mx-auto mb-0.5" />
+              <p className={`text-sm font-bold ${financeStats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>${financeStats.balance.toLocaleString()}</p>
+              <p className="text-[10px] text-gray-500">Balance</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1">

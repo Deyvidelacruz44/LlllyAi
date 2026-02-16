@@ -131,3 +131,55 @@ export interface Category {
   icon?: string;
   type: 'work' | 'personal' | 'both';
 }
+
+// ========================================
+// Finanzas
+// ========================================
+
+export type TransactionType = 'income' | 'expense' | 'transfer';
+
+export type TransactionCategory =
+  | 'salario'
+  | 'freelance'
+  | 'inversiones'
+  | 'alimentacion'
+  | 'transporte'
+  | 'vivienda'
+  | 'servicios'
+  | 'entretenimiento'
+  | 'salud'
+  | 'educacion'
+  | 'ropa'
+  | 'tecnologia'
+  | 'ahorro'
+  | 'deuda'
+  | 'regalo'
+  | 'otro';
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  type: TransactionType;
+  category: TransactionCategory;
+  amount: number;
+  description: string;
+  date: Date;
+  account?: string;
+  tags?: string[];
+  isRecurring?: boolean;
+  recurringFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Budget {
+  id: string;
+  userId: string;
+  category: TransactionCategory;
+  amount: number;
+  period: 'weekly' | 'monthly' | 'yearly';
+  startDate: Date;
+  endDate?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

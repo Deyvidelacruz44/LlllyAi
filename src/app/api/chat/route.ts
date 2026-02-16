@@ -78,10 +78,11 @@ ${agendaContext ? JSON.stringify(agendaContext, null, 2) : 'El usuario aún no t
 CAPACIDADES:
 - Crear eventos en el calendario
 - Crear tareas con prioridades
-- Consultar eventos y tareas existentes
-- Analizar patrones de productividad
+- Registrar transacciones financieras (ingresos y gastos)
+- Consultar eventos, tareas y finanzas existentes
+- Analizar patrones de productividad y financieros
 - Recordar información personal del usuario
-- Dar consejos personalizados sobre organización
+- Dar consejos personalizados sobre organización y finanzas
 
 INSTRUCCIONES CRÍTICAS PARA ACCIONES:
 
@@ -112,6 +113,20 @@ Cuando el usuario quiera CREAR UNA TAREA, responde SOLO con este JSON:
   }
 }
 
+Cuando el usuario quiera REGISTRAR UN GASTO o INGRESO financiero, responde SOLO con este JSON:
+{
+  "action": "create_transaction",
+  "message": "He registrado [el gasto/ingreso] de $[monto]",
+  "data": {
+    "description": "descripción de la transacción",
+    "amount": 123.45,
+    "transaction_type": "expense|income",
+    "category": "alimentacion|transporte|vivienda|servicios|entretenimiento|salud|educacion|ropa|tecnologia|salario|freelance|inversiones|ahorro|deuda|regalo|otro",
+    "date": "YYYY-MM-DD (opcional)",
+    "day_of_week": "hoy|mañana|lunes|etc (opcional)"
+  }
+}
+
 Cuando el usuario te pida RECORDAR algo personal (preferencias, hábitos, información importante), responde con:
 {
   "action": "remember",
@@ -125,9 +140,12 @@ Para CONSULTAS o CONVERSACIÓN NORMAL (sin crear nada), responde en texto normal
 
 EJEMPLOS:
 - "Crea reunión mañana a las 3pm" → Responde con JSON create_event
-- "Agrega tarea comprar leche" → Responde con JSON create_task  
+- "Agrega tarea comprar leche" → Responde con JSON create_task
+- "Gasté 50 en comida" → Responde con JSON create_transaction (expense, alimentacion, 50)
+- "Me pagaron 1500 de freelance" → Responde con JSON create_transaction (income, freelance, 1500)
 - "Recuerda que prefiero reuniones por la mañana" → Responde con JSON remember
 - "¿Qué tengo hoy?" → Responde en texto normal listando eventos
+- "¿Cuánto he gastado este mes?" → Responde en texto usando el contexto financiero
 - "Hola, ¿cómo estás?" → Responde en texto normal conversacional
 
 IMPORTANTE:
@@ -162,8 +180,37 @@ IMPORTANTE:
     const result = await chat.sendMessage(lastMessage.content);
     const response = result.response.text();
 
+    // Parse JSON actions from AI response
+    let parsedAction = null;
+    let messageText = response;
+
+    try {
+      const trimmed = response.trim();
+      // Check if response is pure JSON
+      if (trimmed.startsWith('{')) {
+        const parsed = JSON.parse(trimmed);
+        if (parsed.action && parsed.action !== 'none') {
+          parsedAction = parsed;
+          messageText = parsed.message || '';
+        }
+      } else {
+        // Check for JSON embedded in code blocks
+        const jsonMatch = trimmed.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[1]);
+          if (parsed.action && parsed.action !== 'none') {
+            parsedAction = parsed;
+            messageText = parsed.message || trimmed.replace(jsonMatch[0], '').trim();
+          }
+        }
+      }
+    } catch (e) {
+      // Not valid JSON, treat as plain text response
+    }
+
     return NextResponse.json({ 
-      message: response,
+      message: messageText,
+      ...(parsedAction && { action: parsedAction }),
       success: true 
     });
 
