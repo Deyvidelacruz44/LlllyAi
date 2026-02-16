@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@netlify/plugin-nextjs": "^5.15.8",
     "date-fns": "^4.1.0",
     "firebase": "^12.8.0",
     "lucide-react": "^0.562.0",
