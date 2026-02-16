@@ -688,7 +688,7 @@ export default function FinancesPage() {
 
       {/* ========== AI ANALYSIS PANEL ========== */}
       {showAIPanel && (
-        <div className="bg-gradient-to-br from-brand-navy/5 to-brand-blue/10 border border-brand-blue/30 rounded-xl p-4">
+        <div className="bg-brand-navy/5 border border-brand-blue/30 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Brain className="w-5 h-5 text-brand-navy" />
@@ -1187,7 +1187,7 @@ export default function FinancesPage() {
           ) : (
             <div className="space-y-3">
               {/* Budget Overview Card */}
-              <div className="bg-gradient-to-br from-brand-navy/5 to-brand-blue/10 border border-brand-blue/20 rounded-xl p-4">
+              <div className="bg-brand-navy/5 border border-brand-blue/20 rounded-xl p-4">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-lg font-bold text-brand-navy">

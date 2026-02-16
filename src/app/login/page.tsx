@@ -61,7 +61,7 @@ export default function LoginPage() {
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-brand-navy/10 p-8 border border-white/50 animate-fade-in-up">
           {/* Logo & Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-navy to-brand-blue rounded-2xl mb-4 shadow-lg shadow-brand-navy/30 animate-bounce-soft">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-navy rounded-2xl mb-4 shadow-lg shadow-brand-navy/30 animate-bounce-soft">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-navy via-brand-navy to-brand-blue bg-clip-text text-transparent mb-2">
@@ -134,7 +134,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-brand-navy to-brand-blue text-white py-3.5 px-4 rounded-xl hover:from-[#1a1870] hover:to-[#7bb8f0] transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-navy/25 hover:shadow-xl hover:shadow-brand-navy/30 active:scale-[0.98] flex items-center justify-center gap-2 group"
+              className="w-full bg-brand-navy text-white py-3.5 px-4 rounded-xl hover:from-[#1a1870] hover:to-[#7bb8f0] transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-navy/25 hover:shadow-xl hover:shadow-brand-navy/30 active:scale-[0.98] flex items-center justify-center gap-2 group"
             >
               {loading ? (
                 <>

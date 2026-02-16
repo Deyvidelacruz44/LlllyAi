@@ -392,7 +392,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-36 bg-gradient-to-r from-brand-navy to-brand-blue rounded-2xl animate-pulse" />
+        <div className="h-36 bg-brand-navy rounded-2xl animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />)}
         </div>
@@ -423,7 +423,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-4">
       {/* ===== GRADIENT HEADER ===== */}
-      <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue rounded-2xl p-5 text-white shadow-lg">
+      <div className="bg-brand-navy rounded-2xl p-5 text-white shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
@@ -896,7 +896,7 @@ export default function AnalyticsPage() {
 
       {/* ===== AI ANALYSIS (both tabs) ===== */}
       {!showAIAnalysis && (
-        <div className="bg-gradient-to-r from-brand-navy/5 via-brand-blue/10 to-brand-navy/5 border border-brand-blue/30 p-4 rounded-xl flex items-center justify-between">
+        <div className="bg-brand-navy/5 border border-brand-blue/30 p-4 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-brand-navy/10 p-2 rounded-xl">
               <Brain className="w-5 h-5 text-brand-navy" />
@@ -909,7 +909,7 @@ export default function AnalyticsPage() {
           <button
             onClick={generateAIAnalytics}
             disabled={aiLoading}
-            className="text-xs bg-gradient-to-r from-brand-navy to-brand-blue text-white px-4 py-2 rounded-lg hover:from-[#1a1870] hover:to-[#7bb8f0] transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+            className="text-xs bg-brand-navy text-white px-4 py-2 rounded-lg hover:from-[#1a1870] hover:to-[#7bb8f0] transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
           >
             {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
             {aiLoading ? 'Analizando...' : 'Generar Análisis'}
@@ -927,7 +927,7 @@ export default function AnalyticsPage() {
       {analytics && showAIAnalysis && !aiLoading && (
         <div className="space-y-3">
           {/* Score */}
-          <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue text-white p-4 rounded-xl shadow-lg">
+          <div className="bg-brand-navy text-white p-4 rounded-xl shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">

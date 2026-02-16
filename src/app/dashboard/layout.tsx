@@ -79,10 +79,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-r from-brand-navy to-brand-blue p-2 rounded-xl shadow-lg">
+                <div className="bg-brand-navy p-2 rounded-xl shadow-lg">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-brand-navy to-brand-blue bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold bg-brand-navy bg-clip-text text-transparent">
                   Agenda AI
                 </h1>
               </div>
@@ -103,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   setUserMenuOpen(!userMenuOpen);
                 }}
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center shadow-lg">
+                <div className="w-11 h-11 rounded-xl bg-brand-navy flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-lg">
                     {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                   </span>
@@ -143,21 +143,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                       isActive
-                        ? 'bg-gradient-to-r from-brand-navy/10 to-brand-blue/10 text-brand-navy shadow-sm border border-brand-blue/30'
+                        ? 'bg-brand-navy/10 text-brand-navy shadow-sm border border-brand-blue/30'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className={`p-2 rounded-lg transition-all ${
                       isActive 
-                        ? 'bg-gradient-to-r from-brand-navy to-brand-blue text-white shadow-md' 
+                        ? 'bg-brand-navy text-white shadow-md' 
                         : 'bg-gray-100 group-hover:bg-gray-200'
                     }`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="font-medium">{item.name}</span>
                     {isActive && (
-                      <div className="ml-auto w-1.5 h-6 bg-gradient-to-b from-brand-navy to-brand-blue rounded-full" />
+                      <div className="ml-auto w-1.5 h-6 bg-brand-navy rounded-full" />
                     )}
                   </Link>
                 );
@@ -222,21 +222,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                       isActive
-                        ? 'bg-gradient-to-r from-brand-navy/10 to-brand-blue/10 text-brand-navy shadow-sm border border-brand-blue/30'
+                        ? 'bg-brand-navy/10 text-brand-navy shadow-sm border border-brand-blue/30'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                     style={{ animationDelay: `${(index + 4) * 50}ms` }}
                   >
                     <div className={`p-2 rounded-lg transition-all ${
                       isActive 
-                        ? 'bg-gradient-to-r from-brand-navy to-brand-blue text-white shadow-md' 
+                        ? 'bg-brand-navy text-white shadow-md' 
                         : 'bg-gray-100 group-hover:bg-gray-200'
                     }`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="font-medium">{item.name}</span>
                     {isActive && (
-                      <div className="ml-auto w-1.5 h-6 bg-gradient-to-b from-brand-navy to-brand-blue rounded-full" />
+                      <div className="ml-auto w-1.5 h-6 bg-brand-navy rounded-full" />
                     )}
                   </Link>
                 );
@@ -245,7 +245,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Bottom section */}
             <div className="p-4 border-t border-gray-100">
-              <div className="p-4 bg-gradient-to-r from-brand-navy/5 to-brand-blue/10 rounded-xl">
+              <div className="p-4 bg-brand-navy/5 rounded-xl">
                 <p className="text-xs text-gray-600 mb-1">Versión Beta</p>
                 <p className="text-xs text-gray-500">Agenda AI Personal</p>
               </div>
@@ -277,7 +277,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               
               {/* Mobile user avatar */}
               <div className="lg:hidden">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-brand-navy flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold">
                     {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                   </span>

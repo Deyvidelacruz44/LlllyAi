@@ -354,7 +354,7 @@ export default function ReceivablesPage() {
     <div className="space-y-4">
 
       {/* ========== HEADER ========== */}
-      <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue rounded-xl px-4 py-3 text-white shadow-lg">
+      <div className="bg-brand-navy rounded-xl px-4 py-3 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HandCoins className="w-6 h-6" />
@@ -501,7 +501,7 @@ export default function ReceivablesPage() {
                 <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : rec.id)}>
                   {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-brand-navy flex items-center justify-center flex-shrink-0 shadow-sm">
                     <span className="text-white font-bold text-sm">
                       {rec.debtorName.charAt(0).toUpperCase()}
                     </span>
@@ -690,7 +690,7 @@ export default function ReceivablesPage() {
                 const pct = data.total > 0 ? Math.round((data.paid / data.total) * 100) : 0;
                 return (
                   <div key={name} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-navy to-brand-blue flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-brand-navy flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold text-[10px]">{name.charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">

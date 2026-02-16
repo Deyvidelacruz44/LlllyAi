@@ -379,7 +379,7 @@ export default function OverviewPage() {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="bg-gradient-to-r from-brand-navy via-[#1a1870] to-brand-blue rounded-xl px-4 py-3 text-white shadow-lg animate-fade-in">
+      <div className="bg-brand-navy rounded-xl px-4 py-3 text-white shadow-lg animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6" />
@@ -394,7 +394,7 @@ export default function OverviewPage() {
 
       {/* AI Analysis Section */}
       {(aiAnalyzing || aiSummary || aiInsights.length > 0) && (
-        <div className="bg-gradient-to-br from-brand-navy/5 to-brand-blue/10 rounded-lg p-3 border border-brand-blue/30">
+        <div className="bg-brand-navy/5 rounded-lg p-3 border border-brand-blue/30">
           <div className="flex items-center gap-2 mb-2">
             <div className="bg-brand-navy p-1 rounded">
               <Brain className="w-3.5 h-3.5 text-white" />
@@ -515,7 +515,7 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1">
         {/* Próximos Eventos */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-brand-navy/5 to-brand-blue/10 flex items-center justify-between">
+          <div className="px-3 py-2 border-b border-gray-100 bg-brand-navy/5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-brand-navy" />
               <h2 className="text-sm font-semibold text-gray-900">Próximos Eventos</h2>
