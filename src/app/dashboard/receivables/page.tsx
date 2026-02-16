@@ -351,62 +351,82 @@ export default function ReceivablesPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="space-y-4">
+
+      {/* ========== HEADER ========== */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl px-4 py-3 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <HandCoins className="w-6 h-6" />
+            <div>
+              <h1 className="text-xl font-bold">Cobros</h1>
+              <p className="text-blue-100 text-xs">
+                {stats.activeCount} cuentas activas
+                {stats.overdueCount > 0
+                  ? <span className="ml-1">• {stats.overdueCount} vencidas</span>
+                  : <span className="ml-1">• Todo al día</span>}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowSearch(!showSearch)}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors" title="Buscar">
+              <Search className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 bg-white text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-50 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Nueva Cuenta</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ========== STATS CARDS ========== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-blue-50">
-              <HandCoins className="w-4 h-4 text-blue-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Por Cobrar</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-blue-100 rounded-lg"><HandCoins className="w-4 h-4 text-blue-600" /></div>
+            <p className="text-xs text-gray-500">Por Cobrar</p>
           </div>
-          <p className="text-xl font-bold text-gray-900">${Math.round(stats.totalPending).toLocaleString()}</p>
-          <p className="text-[10px] text-gray-400 mt-1">{stats.activeCount} cuentas activas</p>
+          <p className="text-xl font-bold text-blue-600">${Math.round(stats.totalPending).toLocaleString()}</p>
+          <span className="text-[10px] text-gray-400">{stats.activeCount} cuentas activas</span>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-green-50">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Cobrado</span>
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-green-100 rounded-lg"><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
+            <p className="text-xs text-gray-500">Cobrado</p>
           </div>
           <p className="text-xl font-bold text-green-600">${Math.round(stats.totalCollected).toLocaleString()}</p>
-          <p className="text-[10px] text-gray-400 mt-1">Tasa: {stats.collectionRate}%</p>
+          <span className="text-[10px] text-gray-400">Tasa: {stats.collectionRate}%</span>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-purple-50">
-              <Users className="w-4 h-4 text-purple-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Deudores</span>
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-purple-100 rounded-lg"><Users className="w-4 h-4 text-purple-600" /></div>
+            <p className="text-xs text-gray-500">Deudores</p>
           </div>
-          <p className="text-xl font-bold text-gray-900">{stats.uniqueDebtors}</p>
-          <p className="text-[10px] text-gray-400 mt-1">personas/entidades</p>
+          <p className="text-xl font-bold text-purple-600">{stats.uniqueDebtors}</p>
+          <span className="text-[10px] text-gray-400">personas/entidades</span>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-red-50">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Vencidas</span>
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-red-100 rounded-lg"><AlertCircle className="w-4 h-4 text-red-600" /></div>
+            <p className="text-xs text-gray-500">Vencidas</p>
           </div>
           <p className="text-xl font-bold text-gray-900">{stats.overdueCount}</p>
           {stats.overdueCount > 0 ? (
-            <p className="text-[10px] text-red-500 mt-1 font-medium">Requieren atención</p>
+            <span className="text-[10px] text-red-500 font-medium">Requieren atención</span>
           ) : (
-            <p className="text-[10px] text-green-500 mt-1">Todo al día</p>
+            <span className="text-[10px] text-green-500">Todo al día</span>
           )}
         </div>
       </div>
 
       {/* ========== COLLECTION RATE BAR ========== */}
       {stats.totalLent > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border p-4">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-gray-600" />
@@ -425,30 +445,18 @@ export default function ReceivablesPage() {
         </div>
       )}
 
+      {/* ========== SEARCH BAR ========== */}
+      {showSearch && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por nombre, descripción..."
+            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+      )}
+
       {/* ========== TOOLBAR ========== */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-1.5">
-            <button onClick={() => setShowSearch(!showSearch)}
-              className={`p-2 rounded-lg border transition-colors ${showSearch ? 'bg-gray-100 border-gray-300' : 'border-gray-200 hover:bg-gray-50'}`}>
-              <Search className="w-4 h-4 text-gray-500" />
-            </button>
-          </div>
-          <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium shadow-sm">
-            <Plus className="w-4 h-4" /> Nueva Cuenta
-          </button>
-        </div>
-
-        {showSearch && (
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre, descripción..."
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          </div>
-        )}
-
         {/* Status filter */}
         <div className="flex gap-1 flex-wrap">
           {(['all', 'pending', 'partial', 'overdue', 'paid', 'cancelled'] as StatusFilter[]).map((s) => (

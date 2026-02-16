@@ -469,56 +469,75 @@ export default function DebtsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="space-y-4">
+
+      {/* ========== HEADER ========== */}
+      <div className="bg-gradient-to-r from-rose-600 via-red-600 to-orange-600 rounded-xl px-4 py-3 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-6 h-6" />
+            <div>
+              <h1 className="text-xl font-bold">Deudas</h1>
+              <p className="text-rose-100 text-xs">
+                {stats.activeCount} obligaciones activas
+                {stats.overdueCount > 0
+                  ? <span className="ml-1">• {stats.overdueCount} vencidas</span>
+                  : <span className="ml-1">• Todo al día</span>}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowSearch(!showSearch)}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors" title="Buscar">
+              <Search className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-1.5 bg-white text-rose-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-rose-50 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Agregar</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ========== STATS CARDS ========== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-rose-50">
-              <TrendingDown className="w-4 h-4 text-rose-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Total Mensual</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-rose-100 rounded-lg"><TrendingDown className="w-4 h-4 text-rose-600" /></div>
+            <p className="text-xs text-gray-500">Total Mensual</p>
           </div>
-          <p className="text-xl font-bold text-gray-900">${Math.round(stats.totalMonthly).toLocaleString()}</p>
-          <p className="text-[10px] text-gray-400 mt-1">{stats.activeCount} obligaciones activas</p>
+          <p className="text-xl font-bold text-rose-600">${Math.round(stats.totalMonthly).toLocaleString()}</p>
+          <span className="text-[10px] text-gray-400">{stats.activeCount} obligaciones activas</span>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-purple-50">
-              <Home className="w-4 h-4 text-purple-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Gastos Fijos</span>
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-purple-100 rounded-lg"><Home className="w-4 h-4 text-purple-600" /></div>
+            <p className="text-xs text-gray-500">Gastos Fijos</p>
           </div>
-          <p className="text-xl font-bold text-gray-900">${Math.round(stats.monthlyFixed).toLocaleString()}</p>
-          <p className="text-[10px] text-gray-400 mt-1">{stats.fixedCount} gastos fijos</p>
+          <p className="text-xl font-bold text-purple-600">${Math.round(stats.monthlyFixed).toLocaleString()}</p>
+          <span className="text-[10px] text-gray-400">{stats.fixedCount} gastos fijos</span>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-red-50">
-              <CreditCard className="w-4 h-4 text-red-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Cuotas Deuda</span>
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-red-100 rounded-lg"><CreditCard className="w-4 h-4 text-red-600" /></div>
+            <p className="text-xs text-gray-500">Cuotas Deuda</p>
           </div>
-          <p className="text-xl font-bold text-gray-900">${Math.round(stats.monthlyDebt).toLocaleString()}</p>
-          <p className="text-[10px] text-gray-400 mt-1">{stats.debtCount} deudas</p>
+          <p className="text-xl font-bold text-red-600">${Math.round(stats.monthlyDebt).toLocaleString()}</p>
+          <span className="text-[10px] text-gray-400">{stats.debtCount} deudas</span>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 rounded-lg bg-amber-50">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-            </div>
-            <span className="text-[10px] text-gray-500 uppercase font-medium">Deuda Total</span>
+        <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="p-1.5 bg-amber-100 rounded-lg"><AlertTriangle className="w-4 h-4 text-amber-600" /></div>
+            <p className="text-xs text-gray-500">Deuda Total</p>
           </div>
           <p className="text-xl font-bold text-gray-900">${Math.round(stats.totalDebtRemaining).toLocaleString()}</p>
-          {stats.overdueCount > 0 && (
-            <p className="text-[10px] text-red-500 mt-1 font-medium">{stats.overdueCount} vencidas</p>
-          )}
-          {stats.overdueCount === 0 && (
-            <p className="text-[10px] text-green-500 mt-1">Todo al día</p>
+          {stats.overdueCount > 0 ? (
+            <span className="text-[10px] text-red-500 font-medium">{stats.overdueCount} vencidas</span>
+          ) : (
+            <span className="text-[10px] text-green-500">Todo al día</span>
           )}
         </div>
       </div>
@@ -551,51 +570,38 @@ export default function DebtsPage() {
         </div>
       )}
 
+      {/* ========== SEARCH BAR ========== */}
+      {showSearch && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por nombre, acreedor..."
+            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent" />
+        </div>
+      )}
+
       {/* ========== TOOLBAR ========== */}
       <div className="flex flex-col gap-2">
-        {/* Type filter + Actions */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg flex-1">
-            {([
-              { value: 'all' as ViewMode, label: 'Todos' },
-              { value: 'fixed_expense' as ViewMode, label: 'Gastos Fijos' },
-              { value: 'debt' as ViewMode, label: 'Deudas' },
-            ]).map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setViewMode(tab.value)}
-                className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
-                  viewMode === tab.value
-                    ? 'bg-white shadow-sm text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-1.5">
-            <button onClick={() => setShowSearch(!showSearch)}
-              className={`p-2 rounded-lg border transition-colors ${showSearch ? 'bg-gray-100 border-gray-300' : 'border-gray-200 hover:bg-gray-50'}`}>
-              <Search className="w-4 h-4 text-gray-500" />
+        {/* Type filter */}
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+          {([
+            { value: 'all' as ViewMode, label: 'Todos' },
+            { value: 'fixed_expense' as ViewMode, label: 'Gastos Fijos' },
+            { value: 'debt' as ViewMode, label: 'Deudas' },
+          ]).map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setViewMode(tab.value)}
+              className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
+                viewMode === tab.value
+                  ? 'bg-white shadow-sm text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
             </button>
-            <button onClick={() => setShowModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors text-xs font-medium shadow-sm">
-              <Plus className="w-4 h-4" /> Agregar
-            </button>
-          </div>
+          ))}
         </div>
-
-        {/* Search */}
-        {showSearch && (
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre, acreedor..."
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-transparent" />
-          </div>
-        )}
 
         {/* Status filter */}
         <div className="flex gap-1 flex-wrap">
