@@ -22,7 +22,7 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-      allow read: if isSignedIn();
+      allow read: if isOwner(userId);
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
@@ -143,6 +143,30 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == profileId;
       allow update: if isSignedIn() && request.auth.uid == profileId;
       allow delete: if isSignedIn() && request.auth.uid == profileId;
+    }
+    
+    // Memories collection - Solo el propietario puede acceder
+    match /memories/{memoryId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // FCM tokens - Solo el propietario puede acceder
+    match /fcm_tokens/{tokenId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner() && hasValidUserId();
+      allow delete: if isDocumentOwner();
+    }
+    
+    // API tokens - Solo el propietario puede leer sus propios tokens
+    match /api_tokens/{tokenId} {
+      allow read: if isDocumentOwner();
+      allow create: if hasValidUserId();
+      allow update: if isDocumentOwner();
+      allow delete: if isDocumentOwner();
     }
   }
 }

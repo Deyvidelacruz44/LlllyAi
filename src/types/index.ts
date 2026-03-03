@@ -101,6 +101,13 @@ export interface UserProfile {
   };
   // Notas personales que la IA recuerda
   notes: string[];
+  // Configuración de voz
+  voiceSettings?: {
+    autoRead: boolean;
+    speed: number;
+    pitch: number;
+    enabled: boolean;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

@@ -8,6 +8,8 @@ import { Event, EventType } from '@/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, isToday, isPast, isFuture } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Plus, Edit2, Trash2, X, ChevronLeft, ChevronRight, Search, Calendar as CalendarIcon, LayoutGrid, List, MapPin, Clock, Filter, SortAsc } from 'lucide-react';
+import EventDetailModal from './EventDetailModal';
+import EventFormModal, { EventFormData } from './EventFormModal';
 
 type ViewMode = 'month' | 'week' | 'day';
 type SortMode = 'date' | 'title' | 'type';
@@ -27,7 +29,7 @@ export default function DashboardPage() {
   const [showEventDetail, setShowEventDetail] = useState<Event | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
     type: 'work' as EventType,
@@ -665,207 +667,25 @@ export default function DashboardPage() {
 
       {/* Event Detail Modal */}
       {showEventDetail && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs px-2 py-1 rounded ${getEventTypeColor(showEventDetail.type)}`}>
-                    {getEventTypeName(showEventDetail.type)}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">{showEventDetail.title}</h3>
-              </div>
-              <button onClick={() => setShowEventDetail(null)} className="text-gray-500 hover:text-gray-700">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 text-gray-700">
-                <Clock className="w-5 h-5 mt-0.5 text-gray-400" />
-                <div>
-                  <p className="font-medium">
-                    {format(showEventDetail.startDate, 'EEEE, d MMMM yyyy', { locale: es })}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {format(showEventDetail.startDate, 'HH:mm')} - {format(showEventDetail.endDate, 'HH:mm')}
-                  </p>
-                </div>
-              </div>
-
-              {showEventDetail.description && (
-                <div className="flex items-start gap-3 text-gray-700">
-                  <List className="w-5 h-5 mt-0.5 text-gray-400" />
-                  <div>
-                    <p className="font-medium mb-1">Descripción</p>
-                    <p className="text-sm text-gray-600">{showEventDetail.description}</p>
-                  </div>
-                </div>
-              )}
-
-              {showEventDetail.location && (
-                <div className="flex items-start gap-3 text-gray-700">
-                  <MapPin className="w-5 h-5 mt-0.5 text-gray-400" />
-                  <div>
-                    <p className="font-medium mb-1">Ubicación</p>
-                    <p className="text-sm text-gray-600">{showEventDetail.location}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-start gap-3 text-gray-700">
-                <CalendarIcon className="w-5 h-5 mt-0.5 text-gray-400" />
-                <div>
-                  <p className="font-medium mb-1">Categoría</p>
-                  <p className="text-sm text-gray-600">{showEventDetail.category}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6 pt-6 border-t">
-              <button
-                onClick={() => {
-                  handleEdit(showEventDetail);
-                  setShowEventDetail(null);
-                }}
-                className="flex-1 flex items-center justify-center gap-2 bg-brand-navy text-white py-2 rounded-lg hover:bg-[#1a1870] transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-                Editar
-              </button>
-              <button
-                onClick={() => {
-                  setShowEventDetail(null);
-                  handleDelete(showEventDetail.id);
-                }}
-                className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
+        <EventDetailModal
+          event={showEventDetail}
+          onClose={() => setShowEventDetail(null)}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          getEventTypeColor={getEventTypeColor}
+          getEventTypeName={getEventTypeName}
+        />
       )}
 
-      {/* Modal */}
+      {/* Event Form Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">
-                {editingEvent ? 'Editar Evento' : 'Nuevo Evento'}
-              </h3>
-              <button onClick={resetForm} className="text-gray-500 hover:text-gray-700">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora inicio</label>
-                  <input
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora fin</label>
-                  <input
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as EventType })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                >
-                  <option value="work">Trabajo</option>
-                  <option value="personal">Personal</option>
-                  <option value="meeting">Reunión</option>
-                  <option value="reminder">Recordatorio</option>
-                  <option value="other">Otro</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue"
-                />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-brand-navy text-white py-2 rounded-lg hover:bg-[#1a1870] transition-colors font-medium"
-                >
-                  {editingEvent ? 'Actualizar' : 'Crear'}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-6 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <EventFormModal
+          isEditing={!!editingEvent}
+          formData={formData}
+          onFormDataChange={setFormData}
+          onSubmit={handleSubmit}
+          onClose={resetForm}
+        />
       )}
     </div>
   );

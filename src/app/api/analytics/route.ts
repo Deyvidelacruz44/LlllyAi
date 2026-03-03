@@ -1,18 +1,28 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-if (!GEMINI_API_KEY) {
-  console.warn('⚠️ GEMINI_API_KEY no configurada. El análisis IA no funcionará.');
-}
-
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+import { isGeminiAvailable, getModel, parseJsonResponse } from '@/lib/gemini';
+import { analyticsRequestSchema } from '@/lib/schemas';
+import { verifyOrigin } from '@/lib/security';
+import { checkRateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export async function POST(request: Request) {
   try {
+    // Security: verify same-origin
+    if (!verifyOrigin(request)) {
+      return NextResponse.json({ error: 'Origen no permitido', success: false }, { status: 403 });
+    }
+
+    // Rate limiting by IP
+    const rlKey = getRateLimitKey(request);
+    const rl = checkRateLimit(rlKey, RATE_LIMITS.ai);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Intenta en un momento.', success: false, code: 'RATE_LIMITED' },
+        { status: 429, headers: rl.headers },
+      );
+    }
+
     // Validar que la API key esté configurada
-    if (!genAI) {
+    if (!isGeminiAvailable()) {
       return NextResponse.json(
         { 
           error: 'El servicio de IA no está configurado.', 
@@ -22,15 +32,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const { events, tasks, finances, startDate, endDate } = await request.json();
+    const body = await request.json();
+    const parsed = analyticsRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Solicitud inválida', details: parsed.error.flatten(), success: false },
+        { status: 400 },
+      );
+    }
+    const { events, tasks, finances, startDate, endDate } = parsed.data;
 
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash',
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 3000,
-      }
-    });
+    const model = getModel({ temperature: 0.7, maxOutputTokens: 3000 });
 
     // Crear un resumen conciso de los datos para reducir tokens
     const eventsSummary = {
@@ -123,24 +135,15 @@ Responde SOLO con el JSON, sin texto adicional ni markdown.`;
     // Intentar parsear el JSON de la respuesta
     let analytics;
     try {
-      // Limpiar markdown code blocks si existen
-      const cleanedResponse = response
-        .replace(/```json\n?|\n?```/g, '')
-        .replace(/```\n?|\n?```/g, '')
-        .trim();
-      analytics = JSON.parse(cleanedResponse);
-      
-      // Validar estructura básica
-      if (!analytics.productivityScore || !analytics.summary) {
+      analytics = parseJsonResponse(response);
+      if (!analytics || !(analytics as any).productivityScore || !(analytics as any).summary) {
         throw new Error('Estructura de respuesta inválida');
       }
-      
       // Asegurar que arrays existan
-      analytics.insights = analytics.insights || [];
-      analytics.recommendations = analytics.recommendations || [];
-      analytics.patterns = analytics.patterns || [];
-      analytics.financialInsights = analytics.financialInsights || [];
-      
+      (analytics as any).insights = (analytics as any).insights || [];
+      (analytics as any).recommendations = (analytics as any).recommendations || [];
+      (analytics as any).patterns = (analytics as any).patterns || [];
+      (analytics as any).financialInsights = (analytics as any).financialInsights || [];
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
       console.error('Raw response:', response);

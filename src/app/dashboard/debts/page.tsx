@@ -6,99 +6,21 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
 import { Debt, DebtType, DebtCategory, DebtFrequency, DebtStatus } from '@/types';
 import {
-  Plus, Edit2, Trash2, X, Search, TrendingDown, DollarSign,
-  Home, Wifi, Shield, CreditCard, GraduationCap, Car, Wrench,
-  Receipt, AlertCircle, CheckCircle2, Pause, Clock, CalendarDays,
-  ChevronDown, ChevronUp, Filter, BarChart3, Loader2, Banknote,
-  AlertTriangle, CircleDollarSign, Repeat, FileText, Zap
+  Plus, Edit2, Trash2, Search, TrendingDown, DollarSign,
+  Home, CreditCard, Receipt, CheckCircle2, Pause, Clock, CalendarDays,
+  ChevronDown, BarChart3, Loader2, AlertTriangle, CircleDollarSign
 } from 'lucide-react';
-import { format, differenceInDays, addMonths, addWeeks, addYears, isPast, isToday } from 'date-fns';
+import { format, differenceInDays, addMonths, addWeeks, addYears } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { LucideIcon } from 'lucide-react';
-
-// ==================== CONSTANTS ====================
+import {
+  DEBT_CATEGORY_LABELS, DEBT_CATEGORY_ICONS, DEBT_CATEGORY_COLORS,
+  FREQUENCY_LABELS, STATUS_CONFIG,
+} from './constants';
+import DebtFormModal, { type DebtFormData } from './DebtFormModal';
+import PaymentModal from './PaymentModal';
 
 type ViewMode = 'all' | 'fixed_expense' | 'debt';
 type StatusFilter = 'all' | DebtStatus;
-
-const DEBT_CATEGORY_LABELS: Record<DebtCategory, string> = {
-  alquiler: 'Alquiler',
-  hipoteca: 'Hipoteca',
-  servicios_basicos: 'Servicios Básicos',
-  internet_telefono: 'Internet/Teléfono',
-  seguro: 'Seguros',
-  suscripcion: 'Suscripciones',
-  prestamo_personal: 'Préstamo Personal',
-  tarjeta_credito: 'Tarjeta de Crédito',
-  prestamo_vehiculo: 'Préstamo Vehículo',
-  prestamo_estudiantil: 'Préstamo Estudiantil',
-  impuestos: 'Impuestos',
-  mantenimiento: 'Mantenimiento',
-  membresia: 'Membresía',
-  otro_fijo: 'Otro',
-};
-
-const DEBT_CATEGORY_ICONS: Record<DebtCategory, LucideIcon> = {
-  alquiler: Home,
-  hipoteca: Home,
-  servicios_basicos: Zap,
-  internet_telefono: Wifi,
-  seguro: Shield,
-  suscripcion: Repeat,
-  prestamo_personal: Banknote,
-  tarjeta_credito: CreditCard,
-  prestamo_vehiculo: Car,
-  prestamo_estudiantil: GraduationCap,
-  impuestos: FileText,
-  mantenimiento: Wrench,
-  membresia: Receipt,
-  otro_fijo: DollarSign,
-};
-
-const DEBT_CATEGORY_COLORS: Record<DebtCategory, string> = {
-  alquiler: '#8b5cf6',
-  hipoteca: '#7c3aed',
-  servicios_basicos: '#f59e0b',
-  internet_telefono: '#3b82f6',
-  seguro: '#06b6d4',
-  suscripcion: '#ec4899',
-  prestamo_personal: '#ef4444',
-  tarjeta_credito: '#f43f5e',
-  prestamo_vehiculo: '#f97316',
-  prestamo_estudiantil: '#8b5cf6',
-  impuestos: '#64748b',
-  mantenimiento: '#14b8a6',
-  membresia: '#a855f7',
-  otro_fijo: '#6b7280',
-};
-
-const FREQUENCY_LABELS: Record<DebtFrequency, string> = {
-  weekly: 'Semanal',
-  biweekly: 'Quincenal',
-  monthly: 'Mensual',
-  quarterly: 'Trimestral',
-  yearly: 'Anual',
-  one_time: 'Único',
-};
-
-const STATUS_CONFIG: Record<DebtStatus, { label: string; color: string; bgColor: string; icon: LucideIcon }> = {
-  active: { label: 'Activo', color: 'text-brand-navy', bgColor: 'bg-brand-blue/10 border-brand-blue/30', icon: Clock },
-  paid: { label: 'Pagado', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200', icon: CheckCircle2 },
-  overdue: { label: 'Vencido', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200', icon: AlertCircle },
-  paused: { label: 'Pausado', color: 'text-gray-600', bgColor: 'bg-gray-50 border-gray-200', icon: Pause },
-};
-
-const FIXED_EXPENSE_CATEGORIES: DebtCategory[] = [
-  'alquiler', 'hipoteca', 'servicios_basicos', 'internet_telefono',
-  'seguro', 'suscripcion', 'impuestos', 'mantenimiento', 'membresia', 'otro_fijo',
-];
-
-const DEBT_CATEGORIES: DebtCategory[] = [
-  'prestamo_personal', 'tarjeta_credito', 'prestamo_vehiculo',
-  'prestamo_estudiantil', 'otro_fijo',
-];
-
-// ==================== COMPONENT ====================
 
 export default function DebtsPage() {
   const { user } = useAuth();
@@ -116,21 +38,21 @@ export default function DebtsPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
 
-  const [formData, setFormData] = useState({
-    type: 'fixed_expense' as DebtType,
-    category: 'servicios_basicos' as DebtCategory,
+  const [formData, setFormData] = useState<DebtFormData>({
+    type: 'fixed_expense',
+    category: 'servicios_basicos',
     name: '',
     description: '',
     amount: '',
     totalDebt: '',
-    frequency: 'monthly' as DebtFrequency,
+    frequency: 'monthly',
     dueDay: '',
     startDate: format(new Date(), 'yyyy-MM-dd'),
     endDate: '',
     creditor: '',
     interestRate: '',
     notes: '',
-    status: 'active' as DebtStatus,
+    status: 'active',
   });
 
   useEffect(() => {
@@ -870,252 +792,26 @@ export default function DebtsPage() {
 
       {/* ========== CREATE/EDIT MODAL ========== */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={resetForm}>
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                {editingDebt ? 'Editar Registro' : 'Nueva Deuda / Gasto Fijo'}
-              </h3>
-              <button onClick={resetForm} className="text-gray-400 hover:text-gray-700 p-1">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-3">
-              {/* Type Selector */}
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setFormData({ ...formData, type: 'fixed_expense', category: 'servicios_basicos' })}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
-                    formData.type === 'fixed_expense' ? 'border-brand-navy bg-brand-navy/10 text-brand-navy' : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}>
-                  <Home className="w-4 h-4" /> Gasto Fijo
-                </button>
-                <button type="button" onClick={() => setFormData({ ...formData, type: 'debt', category: 'prestamo_personal' })}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
-                    formData.type === 'debt' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}>
-                  <CreditCard className="w-4 h-4" /> Deuda
-                </button>
-              </div>
-
-              {/* Name */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
-                <input type="text" value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required placeholder={formData.type === 'fixed_expense' ? 'Ej: Alquiler departamento' : 'Ej: Préstamo banco'}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm" />
-              </div>
-
-              {/* Amount */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  {formData.type === 'debt' ? 'Monto de Cuota' : 'Monto'}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
-                  <input type="number" step="0.01" min="0" value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    required placeholder="0.00"
-                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent text-lg font-bold" />
-                </div>
-              </div>
-
-              {/* Total Debt (only for debts) */}
-              {formData.type === 'debt' && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Deuda Total</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                    <input type="number" step="0.01" min="0" value={formData.totalDebt}
-                      onChange={(e) => setFormData({ ...formData, totalDebt: e.target.value })}
-                      placeholder="Total de la deuda"
-                      className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent text-sm" />
-                  </div>
-                </div>
-              )}
-
-              {/* Category - Grid */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
-                <div className="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1">
-                  {(formData.type === 'fixed_expense' ? FIXED_EXPENSE_CATEGORIES : DEBT_CATEGORIES).map((cat) => {
-                    const CatIcon = DEBT_CATEGORY_ICONS[cat] || DollarSign;
-                    return (
-                      <button key={cat} type="button" onClick={() => setFormData({ ...formData, category: cat })}
-                        className={`flex flex-col items-center gap-0.5 p-2 rounded-lg border text-[10px] transition-all ${
-                          formData.category === cat
-                            ? 'border-rose-500 bg-rose-50 text-rose-700 font-medium'
-                            : 'border-gray-100 text-gray-500 hover:border-gray-200 hover:bg-gray-50'
-                        }`}>
-                        <CatIcon className="w-4 h-4" />
-                        {DEBT_CATEGORY_LABELS[cat]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Frequency & Due Day */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Frecuencia</label>
-                  <select value={formData.frequency}
-                    onChange={(e) => setFormData({ ...formData, frequency: e.target.value as DebtFrequency })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm">
-                    {Object.entries(FREQUENCY_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Día de Vencimiento</label>
-                  <input type="number" min="1" max="31" value={formData.dueDay}
-                    onChange={(e) => setFormData({ ...formData, dueDay: e.target.value })}
-                    placeholder="1-31"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
-                </div>
-              </div>
-
-              {/* Creditor & Interest */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Acreedor</label>
-                  <input type="text" value={formData.creditor}
-                    onChange={(e) => setFormData({ ...formData, creditor: e.target.value })}
-                    placeholder="Banco, persona..."
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
-                </div>
-                {formData.type === 'debt' && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Interés (%)</label>
-                    <input type="number" step="0.01" min="0" value={formData.interestRate}
-                      onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
-                  </div>
-                )}
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Fecha Inicio</label>
-                  <input type="date" value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    required className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Fecha Fin (opcional)</label>
-                  <input type="date" value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Descripción (opcional)</label>
-                <input type="text" value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Detalles adicionales..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm" />
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Notas (opcional)</label>
-                <textarea value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Notas..."
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm resize-none" />
-              </div>
-
-              {/* Status (when editing) */}
-              {editingDebt && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Estado</label>
-                  <select value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as DebtStatus })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 text-sm">
-                    <option value="active">Activo</option>
-                    <option value="paid">Pagado</option>
-                    <option value="paused">Pausado</option>
-                    <option value="overdue">Vencido</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Submit */}
-              <div className="flex gap-2 pt-2">
-                <button type="submit"
-                  className="flex-1 bg-rose-600 text-white py-2.5 rounded-xl hover:bg-rose-700 transition-colors font-medium text-sm">
-                  {editingDebt ? 'Actualizar' : 'Registrar'}
-                </button>
-                <button type="button" onClick={resetForm}
-                  className="px-5 bg-gray-100 text-gray-600 py-2.5 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm">
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <DebtFormModal
+          isEditing={!!editingDebt}
+          formData={formData}
+          onFormChange={setFormData}
+          onSubmit={handleSubmit}
+          onClose={resetForm}
+        />
       )}
 
       {/* ========== PAYMENT MODAL ========== */}
       {showPaymentModal && paymentDebt && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPaymentModal(false)}>
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Registrar Pago</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-700 p-1">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-3 mb-4">
-              <p className="text-sm font-medium text-gray-900">{paymentDebt.name}</p>
-              <p className="text-xs text-gray-500">Cuota: ${paymentDebt.amount.toLocaleString()}</p>
-              {paymentDebt.totalDebt && (
-                <p className="text-xs text-gray-500">
-                  Pendiente: ${((paymentDebt.totalDebt || 0) - (paymentDebt.totalPaid || 0)).toLocaleString()}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Monto del Pago</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
-                  <input type="number" step="0.01" min="0" value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg font-bold" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Nota (opcional)</label>
-                <input type="text" value={paymentNote}
-                  onChange={(e) => setPaymentNote(e.target.value)}
-                  placeholder="Ej: Pago mensual"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 text-sm" />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button onClick={handleRecordPayment}
-                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2.5 rounded-xl hover:bg-green-700 transition-colors font-medium text-sm">
-                  <CheckCircle2 className="w-4 h-4" /> Confirmar Pago
-                </button>
-                <button onClick={() => setShowPaymentModal(false)}
-                  className="px-5 bg-gray-100 text-gray-600 py-2.5 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm">
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PaymentModal
+          debt={paymentDebt}
+          paymentAmount={paymentAmount}
+          paymentNote={paymentNote}
+          onAmountChange={setPaymentAmount}
+          onNoteChange={setPaymentNote}
+          onConfirm={handleRecordPayment}
+          onClose={() => setShowPaymentModal(false)}
+        />
       )}
     </div>
   );

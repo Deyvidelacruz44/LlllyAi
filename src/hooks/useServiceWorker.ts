@@ -22,7 +22,6 @@ export function useServiceWorker() {
         .register('/sw.js')
         .then((reg) => {
           setRegistration(reg);
-          console.log('Service Worker registrado');
           
           // Check if already subscribed
           reg.pushManager.getSubscription().then((sub) => {

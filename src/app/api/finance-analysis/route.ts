@@ -1,31 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, options);
-      
-      if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
-        const delay = Math.pow(2, attempt) * 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-      
-      return response;
-    } catch (error) {
-      lastError = error as Error;
-      const delay = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  throw lastError || new Error('Max retries exceeded');
-}
+import { isGeminiAvailable, generateWithRetry, parseJsonResponse } from '@/lib/gemini';
+import { financeAnalysisRequestSchema } from '@/lib/schemas';
+import { verifyOrigin } from '@/lib/security';
+import { checkRateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limiter';
 
 interface TransactionSummary {
   type: string;
@@ -70,14 +47,32 @@ function generateFallbackAnalysis(stats: Record<string, number>) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, stats, transactions, budgets, currentDate } = body;
-
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'User ID required' }, { status: 400 });
+    // Security: verify same-origin
+    if (!verifyOrigin(request)) {
+      return NextResponse.json({ error: 'Origen no permitido', success: false }, { status: 403 });
     }
 
-    if (!GEMINI_API_KEY) {
+    // Rate limiting by IP
+    const rlKey = getRateLimitKey(request);
+    const rl = checkRateLimit(rlKey, RATE_LIMITS.ai);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Intenta en un momento.', success: false, code: 'RATE_LIMITED' },
+        { status: 429, headers: rl.headers },
+      );
+    }
+
+    const body = await request.json();
+    const parsed = financeAnalysisRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: 'Solicitud inválida', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+    const { stats, transactions, budgets, currentDate } = parsed.data;
+
+    if (!isGeminiAvailable()) {
       return NextResponse.json({
         success: true,
         analysis: generateFallbackAnalysis(stats || {}),
@@ -129,20 +124,9 @@ Enfócate en:
 Responde SOLO con el JSON, sin texto adicional ni bloques de código.`;
 
     try {
-      const geminiResponse = await fetchWithRetry(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          },
-        }),
-      });
+      const aiText = await generateWithRetry(prompt, { temperature: 0.7, maxOutputTokens: 2048 });
 
-      if (!geminiResponse.ok) {
-        console.error('Gemini API error:', geminiResponse.status);
+      if (!aiText) {
         return NextResponse.json({
           success: true,
           analysis: generateFallbackAnalysis(stats || {}),
@@ -150,10 +134,8 @@ Responde SOLO con el JSON, sin texto adicional ni bloques de código.`;
         });
       }
 
-      const geminiData = await geminiResponse.json();
-      const responseText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!responseText) {
+      const analysis = parseJsonResponse(aiText);
+      if (!analysis) {
         return NextResponse.json({
           success: true,
           analysis: generateFallbackAnalysis(stats || {}),
@@ -161,14 +143,6 @@ Responde SOLO con el JSON, sin texto adicional ni bloques de código.`;
         });
       }
 
-      // Clean and parse JSON
-      let cleanText = responseText.trim();
-      const jsonMatch = cleanText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        cleanText = jsonMatch[1];
-      }
-
-      const analysis = JSON.parse(cleanText);
       return NextResponse.json({ success: true, analysis, source: 'ai' });
     } catch (aiError) {
       console.error('AI analysis error:', aiError);

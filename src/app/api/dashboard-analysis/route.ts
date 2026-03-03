@@ -1,47 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-// Función para reintentar peticiones con backoff exponencial
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
-  let lastError: Error | null = null;
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, options);
-      
-      // Si es error de rate limit (429) o error del servidor (5xx), reintentar
-      if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
-        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
-        console.log(`API rate limited or server error (${response.status}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-      
-      return response;
-    } catch (error) {
-      lastError = error as Error;
-      const delay = Math.pow(2, attempt) * 1000;
-      console.log(`Request failed, retrying in ${delay}ms...`, error);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  throw lastError || new Error('Max retries exceeded');
-}
+import { isGeminiAvailable, generateWithRetry, parseJsonResponse } from '@/lib/gemini';
+import { dashboardAnalysisRequestSchema } from '@/lib/schemas';
+import { verifyOrigin } from '@/lib/security';
+import { checkRateLimit, getRateLimitKey, RATE_LIMITS } from '@/lib/rate-limiter';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, stats, events, tasks, currentDate } = body;
-
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'User ID required' }, { status: 400 });
+    // Security: verify same-origin
+    if (!verifyOrigin(request)) {
+      return NextResponse.json({ error: 'Origen no permitido', success: false }, { status: 403 });
     }
 
-    // Verificar que la API key esté configurada
-    if (!GEMINI_API_KEY) {
+    // Rate limiting by IP
+    const rlKey = getRateLimitKey(request);
+    const rl = checkRateLimit(rlKey, RATE_LIMITS.ai);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Intenta en un momento.', success: false, code: 'RATE_LIMITED' },
+        { status: 429, headers: rl.headers },
+      );
+    }
+
+    const body = await request.json();
+    const parsed = dashboardAnalysisRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: 'Solicitud inválida', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+    const { stats, events, tasks, currentDate } = parsed.data;
+
+    if (!isGeminiAvailable()) {
       console.warn('GEMINI_API_KEY not configured, using fallback analysis');
       return NextResponse.json({
         success: true,
@@ -89,41 +79,15 @@ Enfócate en:
 Responde SOLO con el JSON, sin texto adicional.`;
 
     try {
-      const geminiResponse = await fetchWithRetry(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1000,
-          }
-        }),
-      });
+      const aiText = await generateWithRetry(prompt, { temperature: 0.7, maxOutputTokens: 1000 });
 
-      if (!geminiResponse.ok) {
-        const errorBody = await geminiResponse.text();
-        console.error(`Gemini API error (${geminiResponse.status}):`, errorBody);
-        throw new Error(`Gemini API error: ${geminiResponse.status}`);
-      }
-
-      const geminiData = await geminiResponse.json();
-      const aiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-      // Extraer JSON del texto
-      let analysis;
+      let analysis: any;
       try {
-        // Buscar JSON en el texto
-        const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          analysis = JSON.parse(jsonMatch[0]);
-        } else {
+        analysis = parseJsonResponse(aiText);
+        if (!analysis) {
           throw new Error('No JSON found in response');
         }
       } catch (parseError) {
-        // Fallback: generar análisis básico
         analysis = generateFallbackAnalysis(stats);
       }
 

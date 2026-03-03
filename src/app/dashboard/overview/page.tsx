@@ -351,10 +351,10 @@ export default function OverviewPage() {
       <div className="space-y-4">
         <div className="h-36 bg-brand-navy rounded-2xl animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-200 dark:bg-surface-secondary rounded-xl animate-pulse" />)}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-40 bg-gray-200 dark:bg-surface-secondary rounded-xl animate-pulse" />)}
         </div>
       </div>
     );
@@ -380,7 +380,7 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        {/* Header quick stats - same style as Métricas */}
+        {/* Header quick stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
@@ -426,24 +426,24 @@ export default function OverviewPage() {
 
       {/* ===== AI ANALYSIS ===== */}
       {(aiAnalyzing || aiSummary || aiInsights.length > 0) && (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-border-custom rounded-xl p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-brand-navy/10 p-1.5 rounded-lg">
-              <Brain className="w-4 h-4 text-brand-navy" />
+            <div className="bg-brand-navy/10 dark:bg-brand-blue/10 p-1.5 rounded-lg">
+              <Brain className="w-4 h-4 text-brand-navy dark:text-brand-blue" />
             </div>
-            <h2 className="text-sm font-semibold text-gray-900">Análisis Inteligente</h2>
-            {aiAnalyzing && <Loader2 className="w-3.5 h-3.5 text-brand-navy animate-spin" />}
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-foreground">Análisis Inteligente</h2>
+            {aiAnalyzing && <Loader2 className="w-3.5 h-3.5 text-brand-navy dark:text-brand-blue animate-spin" />}
           </div>
 
           {aiAnalyzing && !aiSummary && (
-            <div className="flex items-center gap-2 text-brand-navy">
+            <div className="flex items-center gap-2 text-brand-navy dark:text-brand-blue">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <p className="text-xs">Analizando tu actividad...</p>
             </div>
           )}
 
           {aiSummary && (
-            <p className="text-xs text-gray-600 mb-3 leading-relaxed">{aiSummary}</p>
+            <p className="text-xs text-gray-600 dark:text-text-secondary mb-3 leading-relaxed">{aiSummary}</p>
           )}
 
           {aiInsights.length > 0 && (
@@ -470,21 +470,21 @@ export default function OverviewPage() {
         </div>
       )}
 
-      {/* ===== MAIN GRID - 3 columns like Métricas ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Próximos Eventos */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <div className="bg-brand-navy/10 p-1 rounded-lg"><Calendar className="w-4 h-4 text-brand-navy" /></div>
+      {/* ===== BENTO GRID ===== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-min">
+        {/* Próximos Eventos — spans 1 col, 2 rows on large */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-border-custom rounded-xl p-4 hover-lift lg:row-span-2 animate-card-enter" style={{ animationDelay: '0.05s' }}>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
+            <div className="bg-brand-navy/10 dark:bg-brand-blue/10 p-1 rounded-lg"><Calendar className="w-4 h-4 text-brand-navy dark:text-brand-blue" /></div>
             <span className="flex-1">Próximos Eventos</span>
-            <Link href="/dashboard/calendar" className="text-xs text-brand-navy hover:text-brand-blue flex items-center gap-0.5 font-normal">
+            <Link href="/dashboard/calendar" className="text-xs text-brand-navy dark:text-brand-blue hover:text-brand-blue flex items-center gap-0.5 font-normal">
               Ver todos <ArrowRight className="w-3 h-3" />
             </Link>
           </h3>
           {upcomingEvents.length === 0 ? (
-            <div className="flex items-center justify-center h-24 text-gray-400 text-xs">
+            <div className="flex items-center justify-center h-24 text-gray-400 dark:text-text-tertiary text-xs">
               <div className="text-center">
-                <Calendar className="w-6 h-6 text-gray-300 mx-auto mb-1" />
+                <Calendar className="w-6 h-6 text-gray-300 dark:text-text-tertiary mx-auto mb-1" />
                 <p>Sin eventos próximos</p>
               </div>
             </div>
@@ -493,7 +493,7 @@ export default function OverviewPage() {
               {upcomingEvents.slice(0, 5).map((event) => (
                 <div 
                   key={event.id}
-                  className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface-secondary transition-colors"
                 >
                   <div className={`w-1.5 h-10 rounded-full flex-shrink-0 ${
                     event.type === 'work' ? 'bg-brand-navy' : 
@@ -501,8 +501,8 @@ export default function OverviewPage() {
                     event.type === 'meeting' ? 'bg-brand-orange' : 'bg-yellow-500'
                   }`}></div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
-                    <p className="text-xs text-gray-500">{format(event.startDate, "d MMM, HH:mm", { locale: es })}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-foreground truncate">{event.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-text-secondary">{format(event.startDate, "d MMM, HH:mm", { locale: es })}</p>
                   </div>
                   {isToday(event.startDate) && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-navy text-white font-medium">HOY</span>
@@ -511,15 +511,15 @@ export default function OverviewPage() {
               ))}
             </div>
           )}
-          <div className="mt-3 pt-3 border-t border-gray-100 text-xs flex justify-between">
-            <span className="text-gray-500">Total eventos</span>
-            <span className="font-bold text-gray-900">{stats.totalEvents}</span>
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-border-custom text-xs flex justify-between">
+            <span className="text-gray-500 dark:text-text-tertiary">Total eventos</span>
+            <span className="font-bold text-gray-900 dark:text-foreground">{stats.totalEvents}</span>
           </div>
         </div>
 
         {/* Tareas Prioritarias */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-border-custom rounded-xl p-4 hover-lift animate-card-enter" style={{ animationDelay: '0.15s' }}>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
             <div className="bg-brand-orange/10 p-1 rounded-lg"><ListTodo className="w-4 h-4 text-brand-orange" /></div>
             <span className="flex-1">Tareas Prioritarias</span>
             <Link href="/dashboard/tasks" className="text-xs text-brand-orange hover:text-[#e69200] flex items-center gap-0.5 font-normal">
@@ -527,9 +527,9 @@ export default function OverviewPage() {
             </Link>
           </h3>
           {priorityTasks.length === 0 ? (
-            <div className="flex items-center justify-center h-24 text-gray-400 text-xs">
+            <div className="flex items-center justify-center h-24 text-gray-400 dark:text-text-tertiary text-xs">
               <div className="text-center">
-                <CheckCircle className="w-6 h-6 text-gray-300 mx-auto mb-1" />
+                <CheckCircle className="w-6 h-6 text-gray-300 dark:text-text-tertiary mx-auto mb-1" />
                 <p>¡Sin tareas pendientes!</p>
               </div>
             </div>
@@ -538,14 +538,14 @@ export default function OverviewPage() {
               {priorityTasks.slice(0, 5).map((task) => (
                 <div 
                   key={task.id}
-                  className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface-secondary transition-colors"
                 >
                   <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
                     task.status === 'completed' ? 'bg-green-500 border-green-500' : 
                     task.priority === 'high' ? 'border-red-400' : 
-                    task.priority === 'medium' ? 'border-yellow-400' : 'border-gray-300'
+                    task.priority === 'medium' ? 'border-yellow-400' : 'border-gray-300 dark:border-gray-600'
                   }`}></div>
-                  <p className={`text-sm flex-1 truncate ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                  <p className={`text-sm flex-1 truncate ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-foreground'}`}>
                     {task.title}
                   </p>
                   {task.dueDate && isPast(task.dueDate) && !isToday(task.dueDate) && task.status !== 'completed' && (
@@ -555,18 +555,18 @@ export default function OverviewPage() {
               ))}
             </div>
           )}
-          <div className="mt-3 pt-3 border-t border-gray-100 text-xs flex justify-between">
-            <span className="text-gray-500">Completadas</span>
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-border-custom text-xs flex justify-between">
+            <span className="text-gray-500 dark:text-text-tertiary">Completadas</span>
             <span className="font-bold text-green-600">{stats.completedTasks} de {stats.totalTasks}</span>
           </div>
         </div>
 
         {/* Finanzas del Mes */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <div className="bg-emerald-100 p-1 rounded-lg"><Wallet className="w-4 h-4 text-emerald-600" /></div>
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-border-custom rounded-xl p-4 hover-lift animate-card-enter" style={{ animationDelay: '0.25s' }}>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
+            <div className="bg-emerald-100 dark:bg-emerald-900/30 p-1 rounded-lg"><Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /></div>
             <span className="flex-1">Finanzas del Mes</span>
-            <Link href="/dashboard/finances" className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5 font-normal">
+            <Link href="/dashboard/finances" className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-0.5 font-normal">
               Ver detalle <ArrowRight className="w-3 h-3" />
             </Link>
           </h3>
@@ -576,41 +576,41 @@ export default function OverviewPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ArrowUpCircle className="w-3.5 h-3.5 text-green-500" />
-                    <span className="text-xs text-gray-600">Ingresos</span>
+                    <span className="text-xs text-gray-600 dark:text-text-secondary">Ingresos</span>
                   </div>
                   <span className="text-sm font-bold text-green-600">${financeStats.income.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ArrowDownCircle className="w-3.5 h-3.5 text-red-500" />
-                    <span className="text-xs text-gray-600">Gastos</span>
+                    <span className="text-xs text-gray-600 dark:text-text-secondary">Gastos</span>
                   </div>
                   <span className="text-sm font-bold text-red-600">${financeStats.expenses.toLocaleString()}</span>
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <p className="text-[10px] text-gray-500 mb-0.5">Balance neto</p>
+              <div className="bg-gray-50 dark:bg-surface-secondary rounded-lg p-3 text-center">
+                <p className="text-[10px] text-gray-500 dark:text-text-tertiary mb-0.5">Balance neto</p>
                 <p className={`text-xl font-bold ${financeStats.balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   ${financeStats.balance.toLocaleString()}
                 </p>
                 {financeStats.income > 0 && (
-                  <p className="text-[10px] text-gray-400 mt-0.5">
+                  <p className="text-[10px] text-gray-400 dark:text-text-tertiary mt-0.5">
                     Ahorro: {Math.round(((financeStats.income - financeStats.expenses) / financeStats.income) * 100)}%
                   </p>
                 )}
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-24 text-gray-400 text-xs">
+            <div className="flex items-center justify-center h-24 text-gray-400 dark:text-text-tertiary text-xs">
               <div className="text-center">
-                <Wallet className="w-6 h-6 text-gray-300 mx-auto mb-1" />
+                <Wallet className="w-6 h-6 text-gray-300 dark:text-text-tertiary mx-auto mb-1" />
                 <p>Sin transacciones este mes</p>
               </div>
             </div>
           )}
-          <div className="mt-3 pt-3 border-t border-gray-100 text-xs flex justify-between">
-            <span className="text-gray-500">Transacciones</span>
-            <span className="font-bold text-gray-900">{financeStats.count}</span>
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-border-custom text-xs flex justify-between">
+            <span className="text-gray-500 dark:text-text-tertiary">Transacciones</span>
+            <span className="font-bold text-gray-900 dark:text-foreground">{financeStats.count}</span>
           </div>
         </div>
       </div>

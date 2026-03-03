@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lilly-ai-v1';
+const CACHE_NAME = 'lilly-ai-v2';
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
@@ -129,10 +129,10 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-agenda') {
     event.waitUntil(
-      // Sync pending changes when back online
-      self.clients.matchAll().then((clients) => {
+      // Notify all open clients to trigger flushQueue() from sync-manager
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
         clients.forEach((client) => {
-          client.postMessage({ type: 'SYNC_COMPLETE' });
+          client.postMessage({ type: 'BACKGROUND_SYNC_TRIGGERED' });
         });
       })
     );
