@@ -3,7 +3,6 @@
  * Uses SerpAPI when a key is provided, otherwise falls back to Claude.
  */
 import type { Integration, IntegrationConfig, IntegrationResult, IntegrationContext } from './types';
-import { isGeminiAvailable, generateWithRetry } from '@/lib/gemini';
 
 interface SearchResult {
   title: string;
@@ -13,6 +12,8 @@ interface SearchResult {
 
 /** Search using Claude's knowledge as a fallback when no SerpAPI key is set */
 async function searchWithClaude(query: string): Promise<SearchResult[]> {
+  // Lazy import — keeps the Anthropic SDK out of the client bundle
+  const { isGeminiAvailable, generateWithRetry } = await import('@/lib/gemini');
   if (!isGeminiAvailable()) throw new Error('AI not configured');
 
   const text = await generateWithRetry(

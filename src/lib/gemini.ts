@@ -7,7 +7,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-if (!ANTHROPIC_API_KEY) {
+if (!ANTHROPIC_API_KEY && typeof window === 'undefined') {
   console.warn('⚠️ ANTHROPIC_API_KEY no configurada. Los servicios de IA no funcionarán.');
 }
 
