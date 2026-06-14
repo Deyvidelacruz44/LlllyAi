@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
-import { LayoutDashboard, Calendar, CheckSquare, BarChart3, Wallet, LogOut, Menu, X, Sparkles, ChevronDown, Receipt, HandCoins, Plug, Moon, Sun, WifiOff, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Calendar, CheckSquare, BarChart3, Wallet, LogOut, Menu, X, Sparkles, ChevronDown, Receipt, HandCoins, Plug, Moon, Sun, WifiOff, RefreshCw, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import FloatingChat from '@/components/FloatingChat';
@@ -13,6 +13,7 @@ import BottomNav from '@/components/BottomNav';
 import OnboardingModal from '@/components/OnboardingModal';
 import NotificationCenter from '@/components/NotificationCenter';
 import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
+import { usePushRegistration } from '@/hooks/usePushRegistration';
 import { useThemeStore } from '@/stores/themeStore';
 import { useOffline } from '@/hooks/useOffline';
 
@@ -31,6 +32,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Programar notificaciones automáticas de eventos y tareas
   useNotificationScheduler(user?.uid);
+
+  // Registrar el token de push del dispositivo (para recordatorios con app cerrada)
+  const { permission: pushPermission, enable: enablePush } = usePushRegistration(user?.uid);
 
   // Check first-time user for onboarding
   useEffect(() => {
@@ -345,6 +349,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
           </header>
+
+          {/* Push notification opt-in banner */}
+          {pushPermission === 'default' && (
+            <div className="mx-4 lg:mx-6 mt-4 flex items-center gap-3 p-3 bg-brand-blue/10 border border-brand-blue/30 rounded-xl">
+              <div className="bg-brand-navy p-2 rounded-lg shrink-0">
+                <Bell className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-brand-navy dark:text-brand-blue">Activa los recordatorios</p>
+                <p className="text-xs text-gray-600 dark:text-text-secondary">Recibe avisos de tus eventos y tareas aunque la app esté cerrada.</p>
+              </div>
+              <button
+                onClick={() => enablePush()}
+                className="shrink-0 px-3 py-1.5 bg-brand-navy text-white text-sm font-medium rounded-lg hover:bg-brand-navy/90 transition-colors"
+              >
+                Activar
+              </button>
+            </div>
+          )}
 
           {/* Page content */}
           <main id="main-content" role="main" className="p-4 lg:p-6 pb-20 lg:pb-6 animate-fade-in" style={{ viewTransitionName: 'page-content' }}>
