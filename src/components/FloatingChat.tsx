@@ -150,6 +150,16 @@ export default function FloatingChat() {
     return () => window.removeEventListener('open-lilly-chat', handler);
   }, []);
 
+  // Listen for "open in voice mode" (PWA shortcut / quick capture)
+  useEffect(() => {
+    const handler = () => {
+      autoStartVoiceRef.current = true;
+      setIsOpen(true);
+    };
+    window.addEventListener('open-lilly-voice', handler);
+    return () => window.removeEventListener('open-lilly-voice', handler);
+  }, []);
+
   // Auto-start live voice when chat is ready (triggered from FAB quick button)
   useEffect(() => {
     if (currentChatId && isOpen && autoStartVoiceRef.current) {

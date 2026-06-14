@@ -37,6 +37,13 @@
   "categories": ["productivity", "business", "lifestyle"],
   "shortcuts": [
     {
+      "name": "Hablar con Lilly",
+      "short_name": "Hablar",
+      "description": "Abrir el micrófono y hablar con Lilly al instante",
+      "url": "/dashboard/overview?voz=1",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
       "name": "Nuevo Evento",
       "short_name": "Evento",
       "description": "Crear un nuevo evento",

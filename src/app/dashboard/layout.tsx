@@ -46,6 +46,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user]);
 
+  // PWA shortcut "Hablar con Lilly" → open the chat directly in voice mode
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('voz') === '1' || params.get('lilly') === 'voice') {
+      // Slight delay so FloatingChat has mounted its listener
+      setTimeout(() => window.dispatchEvent(new CustomEvent('open-lilly-voice')), 300);
+      // Clean the URL so a reload doesn't re-trigger voice mode
+      const url = new URL(window.location.href);
+      url.searchParams.delete('voz');
+      url.searchParams.delete('lilly');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
   // Cerrar el menú cuando se hace click fuera
   useEffect(() => {
     const handleClickOutside = () => setUserMenuOpen(false);
