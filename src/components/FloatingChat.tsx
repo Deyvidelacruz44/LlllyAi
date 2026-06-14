@@ -642,19 +642,25 @@ export default function FloatingChat() {
     const recognition = new Recognition();
     voiceNoteRecognitionRef.current = recognition;
     recognition.lang = 'es-ES';
-    recognition.continuous = true;
+    // continuous=false is CRITICAL on Android: with continuous=true the engine
+    // re-delivers the cumulative transcript from the start on every internal
+    // restart, which — combined with our segment accumulation — produces the
+    // "Crea Crea una Crea una tarea..." staircase. With continuous=false each
+    // session is one clean utterance; we stitch utterances together ourselves.
+    recognition.continuous = false;
     recognition.interimResults = true;
 
-    // `committed` holds text finalized in previous recognition sessions (across
-    // restarts). `sessionFinal` is the final text of the CURRENT session.
-    // We rebuild from the full results list each event because Android Chrome
-    // re-emits results and mis-reports resultIndex, which causes duplication
-    // when accumulating with `+=`.
+    // `committed` holds finalized text from previous utterance segments.
+    // `sessionFinal` is the final text of the CURRENT segment. We rebuild from
+    // the full results list each event (replace, not append) so Android's
+    // re-emitted results never duplicate within a segment.
     let committed = '';
     let sessionFinal = '';
     let gotResults = false;
 
     recognition.onresult = (event: any) => {
+      // Ignore events from a stale/aborted recognizer (prevents overlap)
+      if (voiceNoteRecognitionRef.current !== recognition) return;
       gotResults = true;
       setVoiceNoteError('');
       let final = '';
@@ -665,10 +671,11 @@ export default function FloatingChat() {
         else interim += r[0].transcript;
       }
       sessionFinal = final;
-      setVoiceNoteTranscript((committed + final + interim).trim());
+      setVoiceNoteTranscript((committed + ' ' + final + ' ' + interim).replace(/\s+/g, ' ').trim());
     };
 
     recognition.onerror = (event: any) => {
+      if (voiceNoteRecognitionRef.current !== recognition) return;
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         setVoiceNoteError('Permiso de micrófono denegado');
         setVoiceNoteEditing(true);
@@ -679,10 +686,12 @@ export default function FloatingChat() {
     };
 
     recognition.onend = () => {
+      // Only the active recognizer may commit text and restart
+      if (voiceNoteRecognitionRef.current !== recognition) return;
       if (voiceNoteActiveRef.current) {
-        // Preserve what was finalized before the engine restarted
+        // Commit this segment's finalized text, then listen for the next one
         if (sessionFinal.trim()) {
-          committed = (committed + sessionFinal).trim() + ' ';
+          committed = (committed + ' ' + sessionFinal).replace(/\s+/g, ' ').trim();
           sessionFinal = '';
         }
         if (!gotResults) {
@@ -693,7 +702,12 @@ export default function FloatingChat() {
             }
           }, 500);
         }
-        try { recognition.start(); } catch { /* ignore */ }
+        // Small delay avoids a tight restart loop when there is silence
+        setTimeout(() => {
+          if (voiceNoteActiveRef.current && voiceNoteRecognitionRef.current === recognition) {
+            try { recognition.start(); } catch { /* ignore */ }
+          }
+        }, 250);
       }
     };
 
@@ -825,6 +839,8 @@ export default function FloatingChat() {
     };
 
     recognition.onresult = (event: any) => {
+      // Ignore a stale/aborted recognizer (prevents overlapping transcripts)
+      if (liveVoiceRecognitionRef.current !== recognition) return;
       // Rebuild from the full results list each event (replace, not append).
       // Android Chrome re-emits results and mis-reports resultIndex, which
       // duplicates words when accumulating with `+=`.
@@ -841,6 +857,9 @@ export default function FloatingChat() {
     };
 
     recognition.onerror = (event: any) => {
+      // A stale recognizer being aborted must NOT schedule a restart, otherwise
+      // each abort cascades into a new recognizer and they overlap.
+      if (liveVoiceRecognitionRef.current !== recognition) return;
       if (!liveVoiceModeRef.current) return;
       if (silenceTimer) clearTimeout(silenceTimer);
       if (event.error === 'no-speech' || event.error === 'aborted') {
@@ -851,6 +870,7 @@ export default function FloatingChat() {
     };
 
     recognition.onend = () => {
+      if (liveVoiceRecognitionRef.current !== recognition) return;
       if (silenceTimer) clearTimeout(silenceTimer);
       if (!liveVoiceModeRef.current) return;
       if (finalTranscript.trim()) handleLiveVoiceMessageFnRef.current(finalTranscript.trim());
