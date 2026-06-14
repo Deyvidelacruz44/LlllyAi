@@ -345,6 +345,24 @@ INSTRUCCIONES:
         { status: 403 },
       );
     }
+    if (error instanceof Anthropic.PermissionDeniedError) {
+      return NextResponse.json(
+        { error: 'La clave de IA no tiene permiso o crédito para este modelo.', success: false, code: 'PERMISSION_ERROR', detail: errMsg },
+        { status: 403 },
+      );
+    }
+    if (error instanceof Anthropic.NotFoundError) {
+      return NextResponse.json(
+        { error: 'Modelo de IA no encontrado. Verifica el ID del modelo.', success: false, code: 'MODEL_NOT_FOUND', detail: errMsg },
+        { status: 404 },
+      );
+    }
+    if (error instanceof Anthropic.BadRequestError) {
+      return NextResponse.json(
+        { error: 'Solicitud inválida a la IA.', success: false, code: 'BAD_REQUEST', detail: errMsg },
+        { status: 400 },
+      );
+    }
     if (errMsg.includes('SAFETY') || errMsg.includes('blocked')) {
       return NextResponse.json(
         { error: 'El mensaje fue filtrado. Intenta reformular tu pregunta.', success: false, code: 'SAFETY_BLOCKED' },
@@ -352,8 +370,9 @@ INSTRUCCIONES:
       );
     }
 
+    // Surface the real error detail so failures are diagnosable in production
     return NextResponse.json(
-      { error: 'Error al procesar el mensaje. Intenta de nuevo.', success: false, code: 'INTERNAL_ERROR' },
+      { error: 'Error al procesar el mensaje. Intenta de nuevo.', success: false, code: 'INTERNAL_ERROR', detail: errMsg },
       { status: 500 },
     );
   }
