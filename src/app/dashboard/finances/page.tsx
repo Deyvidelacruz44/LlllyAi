@@ -22,6 +22,8 @@ import {
 import TransactionDetailModal from './TransactionDetailModal';
 import TransactionModal, { type TransactionFormData } from './TransactionModal';
 import BudgetModal, { type BudgetFormData } from './BudgetModal';
+import QuickTransactionBar from '@/components/QuickTransactionBar';
+import type { ParsedTransaction } from '@/lib/parseTransaction';
 
 type SortMode = 'date' | 'amount' | 'category';
 type FilterPeriod = 'this-month' | 'last-month' | 'last-3-months' | 'all';
@@ -176,6 +178,25 @@ export default function FinancesPage() {
     } catch (error) {
       console.error('Error saving transaction:', error);
     }
+  };
+
+  // Fast natural-language / voice capture → create a transaction instantly
+  const handleQuickAdd = async (parsed: ParsedTransaction) => {
+    if (!user || parsed.amount === null) return;
+    await addDoc(collection(db, 'transactions'), {
+      userId: user.uid,
+      type: parsed.type,
+      category: parsed.category,
+      amount: parsed.amount,
+      description: parsed.description,
+      date: Timestamp.fromDate(new Date()),
+      account: parsed.account || 'banco',
+      isRecurring: false,
+      recurringFrequency: null,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    await loadTransactions();
   };
 
   const handleDelete = async (id: string) => {
@@ -621,6 +642,9 @@ export default function FinancesPage() {
           )}
         </div>
       </div>
+
+      {/* ========== FAST CAPTURE (text / voice) ========== */}
+      <QuickTransactionBar onSubmit={handleQuickAdd} />
 
       {/* ========== QUICK ADD BUTTONS ========== */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
