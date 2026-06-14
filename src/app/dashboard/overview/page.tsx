@@ -7,7 +7,7 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { 
   Calendar, ListTodo, CheckCircle, Clock, AlertCircle,
   BarChart3, ArrowRight, Sparkles, CalendarClock, Loader2, Brain,
-  Zap, Award, Target, LucideIcon, Wallet, ArrowUpCircle, ArrowDownCircle, TrendingUp
+  Zap, Award, Target, LucideIcon, Wallet, ArrowUpCircle, ArrowDownCircle, TrendingUp, RefreshCw
 } from 'lucide-react';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { format, isToday, isTomorrow, isPast, isThisWeek } from 'date-fns';
@@ -76,9 +76,9 @@ export default function OverviewPage() {
     }
   }, [user]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (forceAnalysis = false) => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       const now = new Date();
@@ -187,7 +187,7 @@ export default function OverviewPage() {
 
       setLoading(false);
 
-      // Generar análisis con IA
+      // Generar análisis con IA (cacheado — no se regenera en cada visita)
       await generateAIAnalysis(events, tasks, {
         todayEvents: todayEventsCount,
         tomorrowEvents: tomorrowEventsCount,
@@ -198,7 +198,7 @@ export default function OverviewPage() {
         overdueTasks: overdueTasksCount,
         totalEvents: events.length,
         totalTasks: tasks.length,
-      });
+      }, forceAnalysis);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -206,9 +206,30 @@ export default function OverviewPage() {
     }
   };
 
-  const generateAIAnalysis = async (events: Event[], tasks: Task[], statistics: any) => {
+  // Reusa el análisis durante 6h. Solo se regenera si pasó la ventana o si el
+  // usuario lo pide explícitamente (botón). Así no se gasta IA en cada visita.
+  const ANALYSIS_TTL_MS = 6 * 60 * 60 * 1000;
+
+  const generateAIAnalysis = async (events: Event[], tasks: Task[], statistics: any, force = false) => {
+    const cacheKey = user ? `lilly-analysis-${user.uid}` : null;
+
+    // Intentar usar el análisis cacheado si sigue fresco
+    if (!force && cacheKey && typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (raw) {
+          const cached = JSON.parse(raw) as { summary: string; insights: AIInsight[]; generatedAt: number };
+          if (cached.generatedAt && Date.now() - cached.generatedAt < ANALYSIS_TTL_MS) {
+            setAiSummary(cached.summary || '');
+            setAiInsights(cached.insights || []);
+            return; // No regenerar — usamos el cache
+          }
+        }
+      } catch { /* cache corrupto — regenerar */ }
+    }
+
     setAiAnalyzing(true);
-    
+
     try {
       // Preparar datos resumidos para la IA
       const eventsSummary = events.slice(0, 20).map(e => ({
@@ -242,10 +263,18 @@ export default function OverviewPage() {
       const data = await response.json();
 
       if (data.success && data.analysis) {
-        setAiSummary(data.analysis.summary || '');
-        setAiInsights(data.analysis.insights || []);
+        const summary = data.analysis.summary || '';
+        const insights = data.analysis.insights || [];
+        setAiSummary(summary);
+        setAiInsights(insights);
+        // Cachear (las insights de la IA traen icon como string → serializable)
+        if (cacheKey && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ summary, insights, generatedAt: Date.now() }));
+          } catch { /* localStorage lleno o no disponible */ }
+        }
       } else {
-        // Insights generados localmente como fallback
+        // Insights generados localmente como fallback (no se cachean)
         generateLocalInsights(statistics);
       }
     } catch (error) {
@@ -433,6 +462,15 @@ export default function OverviewPage() {
             </div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-foreground">Análisis Inteligente</h2>
             {aiAnalyzing && <Loader2 className="w-3.5 h-3.5 text-brand-navy dark:text-brand-blue animate-spin" />}
+            <button
+              onClick={() => loadDashboardData(true)}
+              disabled={aiAnalyzing}
+              title="Regenerar análisis"
+              className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-brand-navy dark:hover:text-brand-blue disabled:opacity-40 transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${aiAnalyzing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Regenerar</span>
+            </button>
           </div>
 
           {aiAnalyzing && !aiSummary && (
