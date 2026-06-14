@@ -1,10 +1,9 @@
 /**
  * Web Search Integration Plugin
- * Uses Gemini 2.0 grounding with Google Search when available,
- * or SerpAPI as fallback.
+ * Uses SerpAPI when a key is provided, otherwise falls back to Claude.
  */
 import type { Integration, IntegrationConfig, IntegrationResult, IntegrationContext } from './types';
-import { isGeminiAvailable, getModel } from '@/lib/gemini';
+import { isGeminiAvailable, generateWithRetry } from '@/lib/gemini';
 
 interface SearchResult {
   title: string;
@@ -12,39 +11,27 @@ interface SearchResult {
   url: string;
 }
 
-/** Search using Gemini with grounding (Google Search) — uses existing Gemini API key */
-async function searchWithGemini(query: string): Promise<SearchResult[]> {
-  if (!isGeminiAvailable()) {
-    throw new Error('Gemini not configured');
-  }
+/** Search using Claude's knowledge as a fallback when no SerpAPI key is set */
+async function searchWithClaude(query: string): Promise<SearchResult[]> {
+  if (!isGeminiAvailable()) throw new Error('AI not configured');
 
-  const model = getModel({ temperature: 0.2, maxOutputTokens: 1024 });
-  const prompt = `Busca información actualizada sobre: "${query}"
+  const text = await generateWithRetry(
+    `Busca información actualizada sobre: "${query}"
 
-Responde con un JSON array de resultados. Cada resultado tiene: title, snippet (breve resumen), url (si disponible, sino "").
-Máximo 5 resultados. Solo JSON, nada más.
+Responde con un JSON array de hasta 5 resultados. Cada resultado: {"title":"...","snippet":"resumen breve","url":""}.
+Solo JSON, nada más.
 
 Ejemplo:
-[{"title":"...","snippet":"...","url":""}]`;
+[{"title":"Ejemplo","snippet":"Resumen del tema...","url":""}]`,
+    { temperature: 0.2, maxOutputTokens: 1024 },
+  );
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-
-  // Try to parse the response as JSON
   try {
-    const trimmed = text.trim();
-    const jsonMatch = trimmed.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
+    const match = text.trim().match(/\[[\s\S]*\]/);
+    if (match) return JSON.parse(match[0]);
   } catch { /* fallthrough */ }
 
-  // If not parseable, return a single result with the text
-  return [{
-    title: query,
-    snippet: text.slice(0, 500),
-    url: '',
-  }];
+  return [{ title: query, snippet: text.slice(0, 500), url: '' }];
 }
 
 /** Search using SerpAPI (requires key) */
@@ -63,31 +50,27 @@ async function searchWithSerpAPI(query: string, apiKey: string): Promise<SearchR
 export const webSearchIntegration: Integration = {
   id: 'webSearch',
   name: 'Búsqueda Web',
-  description: 'Permite a Lilly buscar en internet cuando no tiene la respuesta. Usa Gemini o SerpAPI',
+  description: 'Permite a Lilly buscar en internet. Usa SerpAPI si está configurada, o Claude como alternativa.',
   icon: 'Globe',
-  requiresApiKey: false, // Can work with just Gemini
+  requiresApiKey: false,
 
   async execute(params, config): Promise<IntegrationResult> {
     if (!config.enabled) {
-      return { success: false, error: 'Búsqueda web no activada. Actívala en Configuración > Integraciones.' };
+      return { success: false, error: 'Búsqueda web no activada. Actívala en Integraciones.' };
     }
     const query = params.query as string;
-    if (!query) {
-      return { success: false, error: 'No se proporcionó texto de búsqueda' };
-    }
+    if (!query) return { success: false, error: 'No se proporcionó texto de búsqueda' };
 
     try {
-      // Prefer SerpAPI if key provided, fallback to Gemini
       const results = config.apiKey
         ? await searchWithSerpAPI(query, config.apiKey)
-        : await searchWithGemini(query);
+        : await searchWithClaude(query);
       return { success: true, data: { results, query } };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Error en la búsqueda' };
     }
   },
 
-  // Web Search doesn't contribute context passively — it's only used on-demand
   async getContext(): Promise<IntegrationContext | null> {
     return null;
   },

@@ -102,7 +102,7 @@ Responde SOLO con el JSON, sin texto adicional.`;
       return NextResponse.json({
         success: true,
         analysis,
-        source: 'gemini',
+        source: 'claude',
       });
 
     } catch (aiError) {

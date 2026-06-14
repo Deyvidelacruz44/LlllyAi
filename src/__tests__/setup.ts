@@ -10,5 +10,5 @@ vi.mock('@/lib/firebase', () => ({
 }));
 
 // Mock environment variables
-process.env.GEMINI_API_KEY = 'test-key';
+process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
 process.env.NEXT_PUBLIC_FIREBASE_API_KEY = 'test-key';

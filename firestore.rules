@@ -2,171 +2,95 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
     }
-    
-    // Verificar que el documento pertenece al usuario actual
     function isDocumentOwner() {
       return isSignedIn() && resource.data.userId == request.auth.uid;
     }
-    
-    // Verificar que el nuevo documento tendrá el userId correcto
     function hasValidUserId() {
       return isSignedIn() && request.resource.data.userId == request.auth.uid;
     }
-    
+
+    // ── COMPARTIDA: users ────────────────────────────────────────────────
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow read:   if isOwner(userId);
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
     }
-    
-    // Tasks collection - Solo el propietario puede acceder
-    match /tasks/{taskId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+
+    // ── NEXOIA MOBILE ────────────────────────────────────────────────────
+    match /services/{serviceId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.providerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.providerId == request.auth.uid;
     }
-    
-    // Events collection - Solo el propietario puede acceder
-    match /events/{eventId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+    match /appointments/{appointmentId} {
+      allow read: if isSignedIn() && (resource.data.clientId == request.auth.uid || resource.data.providerId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.clientId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.clientId == request.auth.uid || resource.data.providerId == request.auth.uid);
+      allow delete: if false;
     }
-    
-    // Projects collection - Solo el propietario puede acceder
-    match /projects/{projectId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+    match /reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.clientId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.clientId == request.auth.uid;
     }
-    
-    // Categories collection - Solo el propietario puede acceder
-    match /categories/{categoryId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
-    }
-    
-    // AI conversations - Solo el propietario puede acceder
     match /ai_conversations/{conversationId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+      allow read: if isSignedIn() && (request.auth.uid == conversationId || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && (request.auth.uid == conversationId || request.resource.data.userId == request.auth.uid);
+      allow update: if isSignedIn() && (request.auth.uid == conversationId || (resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid));
+      allow delete: if isSignedIn() && (request.auth.uid == conversationId || resource.data.userId == request.auth.uid);
     }
-    
-    // Analytics collection - Solo el propietario puede acceder
-    match /analytics/{analyticsId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
-    }
-    
-    // Notifications - Solo el propietario puede acceder
-    match /notifications/{notificationId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
-    }
-    
-    // Chats with nested messages
+
+    // ── WEB APP ──────────────────────────────────────────────────────────
+    match /tasks/{taskId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /events/{eventId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /projects/{projectId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /categories/{categoryId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /analytics/{analyticsId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /notifications/{notificationId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
     match /chats/{chatId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
-      
+      allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner();
       match /messages/{messageId} {
         allow read: if get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid;
         allow write: if get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid;
       }
     }
-    
-    // Chat messages collection (top-level)
-    match /chat_messages/{messageId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+    match /chat_messages/{messageId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /transactions/{transactionId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /budgets/{budgetId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /debts/{debtId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /receivables/{receivableId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /user_profiles/{profileId} { allow read, create, update, delete: if isSignedIn() && request.auth.uid == profileId; }
+    match /user_integrations/{userId} { allow read, create, update, delete: if isSignedIn() && request.auth.uid == userId; }
+    match /memories/{memoryId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /fcm_tokens/{tokenId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner() && hasValidUserId(); allow delete: if isDocumentOwner(); }
+    match /api_tokens/{tokenId} { allow read: if isDocumentOwner(); allow create: if hasValidUserId(); allow update: if isDocumentOwner(); allow delete: if isDocumentOwner(); }
+
+    // ── LA MELMA ─────────────────────────────────────────────────────────
+    match /artists/{artistId} {
+      allow read, write: if isSignedIn();
     }
-    
-    // Transactions collection - Solo el propietario puede acceder
-    match /transactions/{transactionId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+    match /bookings/{bookingId} {
+      allow read, write: if isSignedIn();
     }
-    
-    // Budgets collection - Solo el propietario puede acceder
-    match /budgets/{budgetId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+    match /venues/{venueId} {
+      allow read, write: if isSignedIn();
     }
-    
-    // Debts collection - Deudas y gastos fijos
-    match /debts/{debtId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+    match /availability/{artistId}/slots/{slotId} {
+      allow read, write: if isSignedIn();
     }
-    
-    // Receivables collection - Cuentas por cobrar
-    match /receivables/{receivableId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
+    match /tourRoutes/{routeId} {
+      allow read, write: if isSignedIn();
     }
-    
-    // User profiles - Solo el propietario puede acceder
-    match /user_profiles/{profileId} {
-      allow read: if isSignedIn() && request.auth.uid == profileId;
-      allow create: if isSignedIn() && request.auth.uid == profileId;
-      allow update: if isSignedIn() && request.auth.uid == profileId;
-      allow delete: if isSignedIn() && request.auth.uid == profileId;
-    }
-    
-    // Memories collection - Solo el propietario puede acceder
-    match /memories/{memoryId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
-    }
-    
-    // FCM tokens - Solo el propietario puede acceder
-    match /fcm_tokens/{tokenId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner() && hasValidUserId();
-      allow delete: if isDocumentOwner();
-    }
-    
-    // API tokens - Solo el propietario puede leer sus propios tokens
-    match /api_tokens/{tokenId} {
-      allow read: if isDocumentOwner();
-      allow create: if hasValidUserId();
-      allow update: if isDocumentOwner();
-      allow delete: if isDocumentOwner();
+    match /notifications/{userId}/items/{itemId} {
+      allow read, write: if isSignedIn();
     }
   }
 }

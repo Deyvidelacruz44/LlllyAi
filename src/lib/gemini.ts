@@ -1,30 +1,114 @@
-import { GoogleGenerativeAI, GenerativeModel, GenerationConfig } from '@google/generative-ai';
+/**
+ * AI Client — Anthropic Claude
+ * Drop-in replacement for the former Gemini module.
+ * Exports the same public API so all callers work without changes.
+ */
+import Anthropic from '@anthropic-ai/sdk';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-if (!GEMINI_API_KEY) {
-  console.warn('⚠️ GEMINI_API_KEY no configurada. Los servicios de IA no funcionarán.');
+if (!ANTHROPIC_API_KEY) {
+  console.warn('⚠️ ANTHROPIC_API_KEY no configurada. Los servicios de IA no funcionarán.');
 }
 
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 
-/** Default model ID used across all AI features */
-export const DEFAULT_MODEL = 'gemini-2.0-flash';
+/** Model used for lightweight tasks (analysis, search fallback) */
+export const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 
-/** Check whether the Gemini SDK is available */
+/** Model used for the main chat (better reasoning) */
+export const CHAT_MODEL = 'claude-sonnet-4-6';
+
+/** Check whether the AI SDK is available */
 export function isGeminiAvailable(): boolean {
-  return genAI !== null;
+  return anthropic !== null;
 }
 
-/** Get a Gemini generative model with optional config overrides */
-export function getModel(config?: Partial<GenerationConfig>): GenerativeModel {
-  if (!genAI) {
-    throw new Error('Gemini API key not configured');
-  }
-  return genAI.getGenerativeModel({
-    model: DEFAULT_MODEL,
-    ...(config ? { generationConfig: config } : {}),
-  });
+interface GenerationConfig {
+  temperature?: number;
+  maxOutputTokens?: number;
+}
+
+/**
+ * Returns a thin model wrapper that exposes the same interface that the
+ * former Gemini SDK used, so analytics/finance/v1-chat routes work as-is.
+ */
+export function getModel(config?: Partial<GenerationConfig>) {
+  if (!anthropic) throw new Error('Anthropic API key not configured');
+
+  const maxTokens = config?.maxOutputTokens ?? 1024;
+  const temperature = config?.temperature;
+
+  const buildParams = (
+    messages: Anthropic.MessageParam[],
+    system?: string,
+  ): Anthropic.MessageCreateParamsNonStreaming => {
+    const params: Anthropic.MessageCreateParamsNonStreaming = {
+      model: DEFAULT_MODEL,
+      max_tokens: maxTokens,
+      messages,
+    };
+    if (temperature !== undefined) params.temperature = temperature;
+    if (system) params.system = system;
+    return params;
+  };
+
+  const extractText = (msg: Anthropic.Message): string =>
+    msg.content.find(b => b.type === 'text')?.text ?? '';
+
+  return {
+    /** Simple single-turn generation */
+    async generateContent(prompt: string) {
+      const msg = await anthropic!.messages.create(
+        buildParams([{ role: 'user', content: prompt }]),
+      );
+      const text = extractText(msg);
+      return { response: { text: () => text } };
+    },
+
+    /**
+     * Multi-turn chat wrapper.
+     * Gemini encoded the system prompt as history[0] (user) + history[1] (model ack).
+     * Claude has a proper `system` parameter, so we extract it.
+     */
+    startChat(options: {
+      history: Array<{ role: string; parts: Array<{ text: string }> }>;
+    }) {
+      const history = options.history ?? [];
+
+      return {
+        async sendMessage(userMessage: string) {
+          let systemText: string | undefined;
+          let startIdx = 0;
+
+          // Gemini hack: first pair (user/model) is actually the system prompt
+          if (
+            history.length >= 2 &&
+            history[0].role === 'user' &&
+            history[1].role === 'model'
+          ) {
+            systemText = history[0].parts.map(p => p.text).join('');
+            startIdx = 2;
+          }
+
+          const claudeMessages: Anthropic.MessageParam[] = history
+            .slice(startIdx)
+            .map(h => ({
+              role: (h.role === 'model' ? 'assistant' : 'user') as 'user' | 'assistant',
+              content: h.parts.map(p => p.text).join(''),
+            }));
+
+          claudeMessages.push({ role: 'user', content: userMessage });
+
+          const msg = await anthropic!.messages.create(
+            buildParams(claudeMessages, systemText),
+          );
+          const text = extractText(msg);
+          return { response: { text: () => text } };
+        },
+      };
+    },
+  };
 }
 
 /** Generate content with automatic retry and exponential backoff */
@@ -33,54 +117,57 @@ export async function generateWithRetry(
   config?: Partial<GenerationConfig>,
   maxRetries = 3,
 ): Promise<string> {
-  const model = getModel(config);
+  if (!anthropic) throw new Error('Anthropic API key not configured');
+
+  const maxTokens = config?.maxOutputTokens ?? 1024;
+  const temperature = config?.temperature;
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const result = await model.generateContent(prompt);
-      return result.response.text();
+      const params: Anthropic.MessageCreateParamsNonStreaming = {
+        model: DEFAULT_MODEL,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }],
+      };
+      if (temperature !== undefined) params.temperature = temperature;
+
+      const msg = await anthropic.messages.create(params);
+      return msg.content.find(b => b.type === 'text')?.text ?? '';
     } catch (error) {
       lastError = error as Error;
-      const message = lastError.message || '';
-      // Retry on rate-limit or transient server errors
-      if (message.includes('429') || message.includes('500') || message.includes('503')) {
-        const delay = Math.pow(2, attempt) * 1000;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+      const isTransient =
+        error instanceof Anthropic.RateLimitError ||
+        error instanceof Anthropic.InternalServerError ||
+        (error instanceof Anthropic.APIError && error.status === 529);
+
+      if (isTransient) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         continue;
       }
-      throw error; // Non-retryable error
+      throw error;
     }
   }
 
-  throw lastError || new Error('Max retries exceeded');
+  throw lastError ?? new Error('Max retries exceeded');
 }
 
 /** Parse a JSON object from an AI text response (handles markdown fences) */
 export function parseJsonResponse<T = Record<string, unknown>>(text: string): T | null {
   const trimmed = text.trim();
 
-  // Try direct parse
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-    try {
-      return JSON.parse(trimmed) as T;
-    } catch { /* fall through */ }
+    try { return JSON.parse(trimmed) as T; } catch { /* fall through */ }
   }
 
-  // Try extracting from markdown code fence
   const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (fenceMatch) {
-    try {
-      return JSON.parse(fenceMatch[1]) as T;
-    } catch { /* fall through */ }
+    try { return JSON.parse(fenceMatch[1]) as T; } catch { /* fall through */ }
   }
 
-  // Try finding a JSON object anywhere in the text
   const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    try {
-      return JSON.parse(jsonMatch[0]) as T;
-    } catch { /* fall through */ }
+    try { return JSON.parse(jsonMatch[0]) as T; } catch { /* fall through */ }
   }
 
   return null;
