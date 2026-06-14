@@ -645,19 +645,27 @@ export default function FloatingChat() {
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    let finalTranscript = '';
+    // `committed` holds text finalized in previous recognition sessions (across
+    // restarts). `sessionFinal` is the final text of the CURRENT session.
+    // We rebuild from the full results list each event because Android Chrome
+    // re-emits results and mis-reports resultIndex, which causes duplication
+    // when accumulating with `+=`.
+    let committed = '';
+    let sessionFinal = '';
     let gotResults = false;
 
     recognition.onresult = (event: any) => {
       gotResults = true;
       setVoiceNoteError('');
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalTranscript += t + ' ';
-        else interimTranscript = t;
+      let final = '';
+      let interim = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) final += r[0].transcript + ' ';
+        else interim += r[0].transcript;
       }
-      setVoiceNoteTranscript((finalTranscript + interimTranscript).trim());
+      sessionFinal = final;
+      setVoiceNoteTranscript((committed + final + interim).trim());
     };
 
     recognition.onerror = (event: any) => {
@@ -672,6 +680,11 @@ export default function FloatingChat() {
 
     recognition.onend = () => {
       if (voiceNoteActiveRef.current) {
+        // Preserve what was finalized before the engine restarted
+        if (sessionFinal.trim()) {
+          committed = (committed + sessionFinal).trim() + ' ';
+          sessionFinal = '';
+        }
         if (!gotResults) {
           setTimeout(() => {
             if (voiceNoteActiveRef.current && !gotResults) {
@@ -812,13 +825,18 @@ export default function FloatingChat() {
     };
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalTranscript += t + ' ';
-        else interimTranscript = t;
+      // Rebuild from the full results list each event (replace, not append).
+      // Android Chrome re-emits results and mis-reports resultIndex, which
+      // duplicates words when accumulating with `+=`.
+      let final = '';
+      let interim = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) final += r[0].transcript + ' ';
+        else interim += r[0].transcript;
       }
-      setLiveVoiceTranscript((finalTranscript + interimTranscript).trim());
+      finalTranscript = final;
+      setLiveVoiceTranscript((final + interim).trim());
       resetSilenceTimer();
     };
 
