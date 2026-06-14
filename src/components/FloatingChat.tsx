@@ -651,11 +651,9 @@ export default function FloatingChat() {
     recognition.interimResults = true;
 
     // `committed` holds finalized text from previous utterance segments.
-    // `sessionFinal` is the final text of the CURRENT segment. We rebuild from
-    // the full results list each event (replace, not append) so Android's
-    // re-emitted results never duplicate within a segment.
+    // `sessionText` is the best transcript for the CURRENT segment.
     let committed = '';
-    let sessionFinal = '';
+    let sessionText = '';
     let gotResults = false;
 
     recognition.onresult = (event: any) => {
@@ -663,15 +661,13 @@ export default function FloatingChat() {
       if (voiceNoteRecognitionRef.current !== recognition) return;
       gotResults = true;
       setVoiceNoteError('');
-      let final = '';
-      let interim = '';
-      for (let i = 0; i < event.results.length; i++) {
-        const r = event.results[i];
-        if (r.isFinal) final += r[0].transcript + ' ';
-        else interim += r[0].transcript;
-      }
-      sessionFinal = final;
-      setVoiceNoteTranscript((committed + ' ' + final + ' ' + interim).replace(/\s+/g, ' ').trim());
+      // Take ONLY the last result. Android Chrome emits cumulative snapshots as
+      // SEPARATE results (["puedes", "puedes escuchar", "puedes escuchar todo"]);
+      // summing them produces the "puedes puedes escuchar..." staircase. The
+      // last result already holds the full utterance on every platform.
+      const last = event.results[event.results.length - 1];
+      sessionText = (last?.[0]?.transcript || '').trim();
+      setVoiceNoteTranscript((committed + ' ' + sessionText).replace(/\s+/g, ' ').trim());
     };
 
     recognition.onerror = (event: any) => {
@@ -689,10 +685,10 @@ export default function FloatingChat() {
       // Only the active recognizer may commit text and restart
       if (voiceNoteRecognitionRef.current !== recognition) return;
       if (voiceNoteActiveRef.current) {
-        // Commit this segment's finalized text, then listen for the next one
-        if (sessionFinal.trim()) {
-          committed = (committed + ' ' + sessionFinal).replace(/\s+/g, ' ').trim();
-          sessionFinal = '';
+        // Commit this segment's text, then listen for the next one
+        if (sessionText.trim()) {
+          committed = (committed + ' ' + sessionText).replace(/\s+/g, ' ').trim();
+          sessionText = '';
         }
         if (!gotResults) {
           setTimeout(() => {
@@ -822,17 +818,19 @@ export default function FloatingChat() {
     const recognition = new Recognition();
     liveVoiceRecognitionRef.current = recognition;
     recognition.lang = 'es-ES';
-    recognition.continuous = true;
+    // continuous=false avoids Android's cumulative-snapshot behavior; each
+    // utterance is one clean session that ends on a natural pause.
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
-    let finalTranscript = '';
+    let lastText = '';
     let silenceTimer: ReturnType<typeof setTimeout> | null = null;
 
     const resetSilenceTimer = () => {
       if (silenceTimer) clearTimeout(silenceTimer);
       silenceTimer = setTimeout(() => {
-        if (finalTranscript.trim() && liveVoiceModeRef.current) {
+        if (lastText.trim() && liveVoiceModeRef.current) {
           try { recognition.stop(); } catch { /* ignore */ }
         }
       }, 2000);
@@ -841,18 +839,12 @@ export default function FloatingChat() {
     recognition.onresult = (event: any) => {
       // Ignore a stale/aborted recognizer (prevents overlapping transcripts)
       if (liveVoiceRecognitionRef.current !== recognition) return;
-      // Rebuild from the full results list each event (replace, not append).
-      // Android Chrome re-emits results and mis-reports resultIndex, which
-      // duplicates words when accumulating with `+=`.
-      let final = '';
-      let interim = '';
-      for (let i = 0; i < event.results.length; i++) {
-        const r = event.results[i];
-        if (r.isFinal) final += r[0].transcript + ' ';
-        else interim += r[0].transcript;
-      }
-      finalTranscript = final;
-      setLiveVoiceTranscript((final + interim).trim());
+      // Take ONLY the last result. Android emits cumulative snapshots as
+      // separate results; summing them produces a duplicated staircase. The
+      // last result already holds the full utterance.
+      const last = event.results[event.results.length - 1];
+      lastText = (last?.[0]?.transcript || '').trim();
+      setLiveVoiceTranscript(lastText);
       resetSilenceTimer();
     };
 
@@ -873,7 +865,7 @@ export default function FloatingChat() {
       if (liveVoiceRecognitionRef.current !== recognition) return;
       if (silenceTimer) clearTimeout(silenceTimer);
       if (!liveVoiceModeRef.current) return;
-      if (finalTranscript.trim()) handleLiveVoiceMessageFnRef.current(finalTranscript.trim());
+      if (lastText.trim()) handleLiveVoiceMessageFnRef.current(lastText.trim());
       else {
         setLiveVoiceTranscript('');
         setTimeout(() => { if (liveVoiceModeRef.current) startLiveListeningFnRef.current(); }, 200);
