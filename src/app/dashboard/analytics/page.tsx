@@ -17,6 +17,7 @@ import {
   eachDayOfInterval, isSameDay
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import ProductivityMeter from '@/components/ProductivityMeter';
 
 // ===== INTERFACES =====
 interface LocalStats {
@@ -523,6 +524,9 @@ export default function AnalyticsPage() {
       {/* ===== GENERAL TAB ===== */}
       {activeTab === 'general' && (
         <div className="space-y-3">
+          {/* Real productivity metrics (streak, on-time, weekly trend) */}
+          <ProductivityMeter />
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {/* Tasks breakdown */}
             <div className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">

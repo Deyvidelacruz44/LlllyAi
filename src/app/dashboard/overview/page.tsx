@@ -13,6 +13,7 @@ import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { format, isToday, isTomorrow, isPast, isThisWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
+import ProductivityMeter from '@/components/ProductivityMeter';
 
 interface Event {
   id: string;
@@ -507,6 +508,9 @@ export default function OverviewPage() {
           )}
         </div>
       )}
+
+      {/* ===== PRODUCTIVITY METER ===== */}
+      <ProductivityMeter />
 
       {/* ===== BENTO GRID ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-min">
