@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
-import { Transaction, TransactionType, TransactionCategory, Budget } from '@/types';
+import { Transaction, TransactionType, TransactionCategory, Budget, Currency } from '@/types';
+import { formatMoney, formatMoneyMulti, sumByCurrency, txCurrency, emptyTotals } from '@/lib/format';
 import {
   Plus, Edit2, Trash2, X, Search, TrendingUp, TrendingDown,
   DollarSign, PiggyBank, Wallet, ArrowUpCircle, ArrowDownCircle,
@@ -73,6 +74,7 @@ export default function FinancesPage() {
     type: 'expense',
     category: 'otro',
     amount: '',
+    currency: 'DOP',
     description: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     account: '',
@@ -156,6 +158,7 @@ export default function FinancesPage() {
         type: formData.type,
         category: formData.category,
         amount: parseFloat(formData.amount),
+        currency: formData.currency,
         description: formData.description,
         date: Timestamp.fromDate(new Date(formData.date + 'T12:00:00')),
         account: formData.account || 'banco',
@@ -188,6 +191,7 @@ export default function FinancesPage() {
       type: parsed.type,
       category: parsed.category,
       amount: parsed.amount,
+      currency: parsed.currency,
       description: parsed.description,
       date: Timestamp.fromDate(new Date()),
       account: parsed.account || 'banco',
@@ -215,6 +219,7 @@ export default function FinancesPage() {
       type: t.type,
       category: t.category,
       amount: t.amount.toString(),
+      currency: txCurrency(t),
       description: t.description,
       date: format(t.date, 'yyyy-MM-dd'),
       account: t.account || '',
@@ -226,7 +231,7 @@ export default function FinancesPage() {
 
   const resetForm = () => {
     setFormData({
-      type: 'expense', category: 'otro', amount: '', description: '',
+      type: 'expense', category: 'otro', amount: '', currency: 'DOP', description: '',
       date: format(new Date(), 'yyyy-MM-dd'), account: '',
       isRecurring: false, recurringFrequency: 'monthly',
     });
@@ -239,6 +244,7 @@ export default function FinancesPage() {
       type: 'expense',
       category: item.category,
       amount: item.defaultAmount,
+      currency: 'DOP',
       description: item.label,
       date: format(new Date(), 'yyyy-MM-dd'),
       account: '',
@@ -362,49 +368,76 @@ export default function FinancesPage() {
 
   const stats = useMemo(() => {
     const periodTx = getPeriodTransactions(periodFilter);
-    const income = periodTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const expenses = periodTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const incomeTx = periodTx.filter(t => t.type === 'income');
+    const expenseTx = periodTx.filter(t => t.type === 'expense');
+
+    // Totales separados por moneda (no se mezclan DOP y USD)
+    const incomeTotals = sumByCurrency(incomeTx, t => t.amount, txCurrency);
+    const expenseTotals = sumByCurrency(expenseTx, t => t.amount, txCurrency);
+    const balanceTotals: Record<Currency, number> = {
+      DOP: incomeTotals.DOP - expenseTotals.DOP,
+      USD: incomeTotals.USD - expenseTotals.USD,
+    };
+
+    // Escalares en DOP (moneda dominante) para métricas/analítica derivadas.
+    const income = incomeTotals.DOP;
+    const expenses = expenseTotals.DOP;
     const balance = income - expenses;
     const savingsRate = income > 0 ? Math.round(((income - expenses) / income) * 100) : 0;
 
-    const expensesByCategory: Record<string, number> = {};
-    periodTx.filter(t => t.type === 'expense').forEach(t => {
-      expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
+    // Gastos/ingresos por categoría, separados por moneda
+    const expensesByCategory: Record<string, Record<Currency, number>> = {};
+    expenseTx.forEach(t => {
+      const cur = txCurrency(t);
+      if (!expensesByCategory[t.category]) expensesByCategory[t.category] = emptyTotals();
+      expensesByCategory[t.category][cur] += t.amount;
+    });
+    // Versión solo-DOP para comparar contra presupuestos (que son en pesos)
+    const expensesByCategoryDOP: Record<string, number> = {};
+    Object.entries(expensesByCategory).forEach(([cat, tot]) => { expensesByCategoryDOP[cat] = tot.DOP; });
+
+    const incomeByCategory: Record<string, Record<Currency, number>> = {};
+    incomeTx.forEach(t => {
+      const cur = txCurrency(t);
+      if (!incomeByCategory[t.category]) incomeByCategory[t.category] = emptyTotals();
+      incomeByCategory[t.category][cur] += t.amount;
     });
 
-    const incomeByCategory: Record<string, number> = {};
-    periodTx.filter(t => t.type === 'income').forEach(t => {
-      incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
-    });
+    const topExpenseCategory = Object.entries(expensesByCategory)
+      .sort(([, a], [, b]) => (b.DOP - a.DOP) || (b.USD - a.USD))[0];
 
-    const topExpenseCategory = Object.entries(expensesByCategory).sort(([, a], [, b]) => b - a)[0];
-
-    // Balance by account (across ALL transactions, not just period)
-    const balanceByAccount: Record<string, { income: number; expenses: number; balance: number }> = {};
-    transactions.forEach(t => {
+    // Balance por cuenta — mismo período que las tarjetas de stats, separado por moneda.
+    // Clave: la cuenta tarjeta_banreservas tiene cargos en DOP y USD.
+    const balanceByAccount: Record<string, { income: Record<Currency, number>; expenses: Record<Currency, number>; balance: Record<Currency, number> }> = {};
+    periodTx.forEach(t => {
       const acct = t.account || 'principal';
-      if (!balanceByAccount[acct]) balanceByAccount[acct] = { income: 0, expenses: 0, balance: 0 };
+      const cur = txCurrency(t);
+      if (!balanceByAccount[acct]) balanceByAccount[acct] = { income: emptyTotals(), expenses: emptyTotals(), balance: emptyTotals() };
       if (t.type === 'income') {
-        balanceByAccount[acct].income += t.amount;
-        balanceByAccount[acct].balance += t.amount;
+        balanceByAccount[acct].income[cur] += t.amount;
+        balanceByAccount[acct].balance[cur] += t.amount;
       } else if (t.type === 'expense') {
-        balanceByAccount[acct].expenses += t.amount;
-        balanceByAccount[acct].balance -= t.amount;
+        balanceByAccount[acct].expenses[cur] += t.amount;
+        balanceByAccount[acct].balance[cur] -= t.amount;
       }
     });
 
-    // Total balance across all accounts
-    const totalBalance = Object.values(balanceByAccount).reduce((s, a) => s + a.balance, 0);
+    // Balance total por moneda
+    const totalBalance = Object.values(balanceByAccount).reduce(
+      (s, a) => ({ DOP: s.DOP + a.balance.DOP, USD: s.USD + a.balance.USD }),
+      emptyTotals(),
+    );
 
     return {
+      incomeTotals, expenseTotals, balanceTotals,
       income, expenses, balance, savingsRate,
       transactionCount: periodTx.length,
-      incomeCount: periodTx.filter(t => t.type === 'income').length,
-      expenseCount: periodTx.filter(t => t.type === 'expense').length,
-      expensesByCategory, incomeByCategory,
+      incomeCount: incomeTx.length,
+      expenseCount: expenseTx.length,
+      expensesByCategory, expensesByCategoryDOP, incomeByCategory,
       balanceByAccount, totalBalance,
       topCategory: topExpenseCategory
-        ? { name: CATEGORY_LABELS[topExpenseCategory[0] as TransactionCategory] || topExpenseCategory[0], amount: topExpenseCategory[1] }
+        ? { name: CATEGORY_LABELS[topExpenseCategory[0] as TransactionCategory] || topExpenseCategory[0], totals: topExpenseCategory[1] }
         : null,
       avgDailyExpense: expenses > 0 ? (() => {
         const now = new Date();
@@ -419,8 +452,8 @@ export default function FinancesPage() {
   const prevStats = useMemo(() => {
     if (periodFilter !== 'this-month') return null;
     const prevTx = getPeriodTransactions('last-month');
-    const income = prevTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const expenses = prevTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+    const income = prevTx.filter(t => t.type === 'income' && txCurrency(t) === 'DOP').reduce((s, t) => s + t.amount, 0);
+    const expenses = prevTx.filter(t => t.type === 'expense' && txCurrency(t) === 'DOP').reduce((s, t) => s + t.amount, 0);
     return { income, expenses, balance: income - expenses };
   }, [transactions, periodFilter, getPeriodTransactions]);
 
@@ -440,12 +473,13 @@ export default function FinancesPage() {
     const end = periodFilter === 'this-month' ? now : endOfMonth(target);
     const days = eachDayOfInterval({ start, end });
 
+    // Gráfico en DOP (moneda dominante); los pocos cargos USD se ven en el detalle.
     return days.map(day => {
       const dayExpenses = transactions
-        .filter(t => t.type === 'expense' && isSameDay(t.date, day))
+        .filter(t => t.type === 'expense' && isSameDay(t.date, day) && txCurrency(t) === 'DOP')
         .reduce((s, t) => s + t.amount, 0);
       const dayIncome = transactions
-        .filter(t => t.type === 'income' && isSameDay(t.date, day))
+        .filter(t => t.type === 'income' && isSameDay(t.date, day) && txCurrency(t) === 'DOP')
         .reduce((s, t) => s + t.amount, 0);
       return { date: day, expenses: dayExpenses, income: dayIncome };
     });
@@ -454,12 +488,13 @@ export default function FinancesPage() {
   // ==================== BUDGET PROGRESS ====================
 
   const budgetProgress = useMemo(() => {
+    // Los presupuestos son en DOP: solo cuenta el gasto en pesos de la categoría.
     return budgets.map(b => {
-      const spent = stats.expensesByCategory[b.category] || 0;
+      const spent = stats.expensesByCategoryDOP[b.category] || 0;
       const pct = b.amount > 0 ? Math.round((spent / b.amount) * 100) : 0;
       return { ...b, spent, percentage: pct, remaining: b.amount - spent };
     });
-  }, [budgets, stats.expensesByCategory]);
+  }, [budgets, stats.expensesByCategoryDOP]);
 
   // ==================== CSV EXPORT ====================
 
@@ -493,7 +528,7 @@ export default function FinancesPage() {
 
     try {
       const transactionSummary = filteredTransactions.slice(0, 30).map(t => ({
-        type: t.type, category: t.category, amount: t.amount,
+        type: t.type, category: t.category, amount: t.amount, currency: txCurrency(t),
         description: t.description, date: format(t.date, 'yyyy-MM-dd'),
       }));
 
@@ -506,7 +541,7 @@ export default function FinancesPage() {
             totalIncome: stats.income, totalExpenses: stats.expenses,
             transactionCount: stats.transactionCount,
             incomeCount: stats.incomeCount, expenseCount: stats.expenseCount,
-            expensesByCategory: stats.expensesByCategory,
+            expensesByCategory: stats.expensesByCategoryDOP,
             avgDailyExpense: stats.avgDailyExpense,
           },
           transactions: transactionSummary,
@@ -608,7 +643,7 @@ export default function FinancesPage() {
             <div className="p-1.5 bg-green-100 rounded-lg"><ArrowUpCircle className="w-4 h-4 text-green-600" /></div>
             <p className="text-xs text-gray-500">Ingresos</p>
           </div>
-          <p className="text-xl font-bold text-green-600">${stats.income.toLocaleString()}</p>
+          <p className="text-lg font-bold text-green-600 leading-tight">{formatMoneyMulti(stats.incomeTotals)}</p>
           {prevStats && <DeltaBadge current={stats.income} previous={prevStats.income} />}
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -616,7 +651,7 @@ export default function FinancesPage() {
             <div className="p-1.5 bg-red-100 rounded-lg"><ArrowDownCircle className="w-4 h-4 text-red-600" /></div>
             <p className="text-xs text-gray-500">Gastos</p>
           </div>
-          <p className="text-xl font-bold text-red-600">${stats.expenses.toLocaleString()}</p>
+          <p className="text-lg font-bold text-red-600 leading-tight">{formatMoneyMulti(stats.expenseTotals)}</p>
           {prevStats && <DeltaBadge current={stats.expenses} previous={prevStats.expenses} invertColors />}
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -624,8 +659,8 @@ export default function FinancesPage() {
             <div className="p-1.5 bg-brand-blue/20 rounded-lg"><Wallet className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Balance</p>
           </div>
-          <p className={`text-xl font-bold ${stats.balance >= 0 ? 'text-brand-navy' : 'text-red-600'}`}>
-            ${stats.balance.toLocaleString()}
+          <p className={`text-lg font-bold leading-tight ${stats.balance >= 0 ? 'text-brand-navy' : 'text-red-600'}`}>
+            {formatMoneyMulti(stats.balanceTotals)}
           </p>
           {prevStats && <DeltaBadge current={stats.balance} previous={prevStats.balance} />}
         </div>
@@ -638,7 +673,7 @@ export default function FinancesPage() {
             {stats.savingsRate}%
           </p>
           {stats.avgDailyExpense > 0 && (
-            <span className="text-[10px] text-gray-400">${stats.avgDailyExpense.toLocaleString()}/día</span>
+            <span className="text-[10px] text-gray-400">{formatMoney(stats.avgDailyExpense)}/día</span>
           )}
         </div>
       </div>
@@ -794,28 +829,28 @@ export default function FinancesPage() {
                   <h3 className="text-sm font-bold text-gray-900">Distribución del Balance</h3>
                 </div>
                 <div className="text-right">
-                  <p className={`text-lg font-bold ${stats.totalBalance >= 0 ? 'text-brand-navy' : 'text-red-600'}`}>
-                    ${stats.totalBalance.toLocaleString()}
+                  <p className={`text-base font-bold leading-tight ${stats.totalBalance.DOP >= 0 ? 'text-brand-navy' : 'text-red-600'}`}>
+                    {formatMoneyMulti(stats.totalBalance)}
                   </p>
                   <p className="text-[10px] text-gray-400">Balance total</p>
                 </div>
               </div>
 
-              {/* Stacked bar */}
-              {stats.totalBalance > 0 && (
+              {/* Stacked bar (proporciones en DOP, la moneda dominante) */}
+              {stats.totalBalance.DOP > 0 && (
                 <div className="flex h-3 rounded-full overflow-hidden mb-4 bg-gray-100">
                   {Object.entries(stats.balanceByAccount)
-                    .filter(([, data]) => data.balance > 0)
-                    .sort(([, a], [, b]) => b.balance - a.balance)
+                    .filter(([, data]) => data.balance.DOP > 0)
+                    .sort(([, a], [, b]) => b.balance.DOP - a.balance.DOP)
                     .map(([acct]) => {
                       const option = getAccountOption(acct);
-                      const pct = (stats.balanceByAccount[acct].balance / stats.totalBalance) * 100;
+                      const pct = (stats.balanceByAccount[acct].balance.DOP / stats.totalBalance.DOP) * 100;
                       return (
                         <div
                           key={acct}
                           className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
                           style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: option.color }}
-                          title={`${option.label}: $${stats.balanceByAccount[acct].balance.toLocaleString()} (${Math.round(pct)}%)`}
+                          title={`${option.label}: ${formatMoneyMulti(stats.balanceByAccount[acct].balance)} (${Math.round(pct)}%)`}
                         />
                       );
                     })}
@@ -825,11 +860,11 @@ export default function FinancesPage() {
               {/* Account cards */}
               <div className="space-y-2">
                 {Object.entries(stats.balanceByAccount)
-                  .sort(([, a], [, b]) => b.balance - a.balance)
+                  .sort(([, a], [, b]) => b.balance.DOP - a.balance.DOP)
                   .map(([acct, data]) => {
                     const option = getAccountOption(acct);
                     const Icon = option.icon;
-                    const pct = stats.totalBalance > 0 ? Math.round((Math.max(data.balance, 0) / stats.totalBalance) * 100) : 0;
+                    const pct = stats.totalBalance.DOP > 0 ? Math.round((Math.max(data.balance.DOP, 0) / stats.totalBalance.DOP) * 100) : 0;
                     return (
                       <div key={acct} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-gray-100">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -839,17 +874,17 @@ export default function FinancesPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-semibold text-gray-900">{option.label}</span>
-                            <span className={`text-sm font-bold ${data.balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-                              ${data.balance.toLocaleString()}
+                            <span className={`text-sm font-bold ${data.balance.DOP >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                              {formatMoneyMulti(data.balance)}
                             </span>
                           </div>
                           <div className="flex items-center justify-between mt-1">
                             <div className="flex items-center gap-3 text-[10px]">
                               <span className="text-green-600 flex items-center gap-0.5">
-                                <ArrowUpCircle className="w-3 h-3" /> ${data.income.toLocaleString()}
+                                <ArrowUpCircle className="w-3 h-3" /> {formatMoneyMulti(data.income)}
                               </span>
                               <span className="text-red-500 flex items-center gap-0.5">
-                                <ArrowDownCircle className="w-3 h-3" /> ${data.expenses.toLocaleString()}
+                                <ArrowDownCircle className="w-3 h-3" /> {formatMoneyMulti(data.expenses)}
                               </span>
                             </div>
                             {pct > 0 && (
@@ -868,12 +903,12 @@ export default function FinancesPage() {
                   <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Fuentes de ingreso del período</p>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(stats.incomeByCategory)
-                      .sort(([, a], [, b]) => b - a)
+                      .sort(([, a], [, b]) => (b.DOP - a.DOP) || (b.USD - a.USD))
                       .map(([cat, amount]) => (
                         <div key={cat} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-100 rounded-lg">
                           <span className="w-2 h-2 rounded-full bg-green-500" />
                           <span className="text-[11px] text-green-800 font-medium">{CATEGORY_LABELS[cat as TransactionCategory]}</span>
-                          <span className="text-[11px] text-green-600 font-bold">${amount.toLocaleString()}</span>
+                          <span className="text-[11px] text-green-600 font-bold">{formatMoneyMulti(amount)}</span>
                         </div>
                       ))}
                   </div>
@@ -929,8 +964,8 @@ export default function FinancesPage() {
                       <div className="absolute bottom-full mb-1 hidden group-hover:block z-10">
                         <div className="bg-gray-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap">
                           <p className="font-medium">{format(day.date, 'd MMM', { locale: es })}</p>
-                          {day.expenses > 0 && <p className="text-red-300">-${day.expenses.toLocaleString()}</p>}
-                          {day.income > 0 && <p className="text-green-300">+${day.income.toLocaleString()}</p>}
+                          {day.expenses > 0 && <p className="text-red-300">-{formatMoney(day.expenses)}</p>}
+                          {day.income > 0 && <p className="text-green-300">+{formatMoney(day.income)}</p>}
                           {day.expenses === 0 && day.income === 0 && <p className="text-gray-400">Sin movimientos</p>}
                         </div>
                       </div>
@@ -951,11 +986,11 @@ export default function FinancesPage() {
                 </h3>
                 <div className="space-y-2.5">
                   {Object.entries(stats.expensesByCategory)
-                    .sort(([, a], [, b]) => b - a)
+                    .sort(([, a], [, b]) => (b.DOP - a.DOP) || (b.USD - a.USD))
                     .slice(0, 8)
                     .map(([category, amount]) => {
-                      const maxAmount = Math.max(...Object.values(stats.expensesByCategory));
-                      const pct = stats.expenses > 0 ? Math.round((amount / stats.expenses) * 100) : 0;
+                      const maxAmount = Math.max(...Object.values(stats.expensesByCategory).map(t => t.DOP), 1);
+                      const pct = stats.expenses > 0 ? Math.round((amount.DOP / stats.expenses) * 100) : 0;
                       const CatIcon = CATEGORY_ICONS[category as TransactionCategory];
                       return (
                         <div key={category} className="flex items-center gap-2 text-xs">
@@ -968,17 +1003,17 @@ export default function FinancesPage() {
                           <span className="w-20 truncate text-gray-700 font-medium">{CATEGORY_LABELS[category as TransactionCategory] || category}</span>
                           <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-500"
-                              style={{ width: `${Math.max((amount / maxAmount) * 100, 3)}%`, backgroundColor: CATEGORY_ACCENT[category as TransactionCategory] }} />
+                              style={{ width: `${Math.max((amount.DOP / maxAmount) * 100, 3)}%`, backgroundColor: CATEGORY_ACCENT[category as TransactionCategory] }} />
                           </div>
                           <span className="w-10 text-right text-gray-400">{pct}%</span>
-                          <span className="w-20 text-right font-semibold text-gray-900">${amount.toLocaleString()}</span>
+                          <span className="w-24 text-right font-semibold text-gray-900">{formatMoneyMulti(amount)}</span>
                         </div>
                       );
                     })}
                 </div>
                 {stats.topCategory && (
                   <p className="text-[10px] text-gray-400 mt-3 pt-2 border-t">
-                    Mayor gasto: {stats.topCategory.name} (${stats.topCategory.amount.toLocaleString()})
+                    Mayor gasto: {stats.topCategory.name} ({formatMoneyMulti(stats.topCategory.totals)})
                   </p>
                 )}
               </div>
@@ -992,10 +1027,10 @@ export default function FinancesPage() {
                 </h3>
                 <div className="space-y-2.5">
                   {Object.entries(stats.incomeByCategory)
-                    .sort(([, a], [, b]) => b - a)
+                    .sort(([, a], [, b]) => (b.DOP - a.DOP) || (b.USD - a.USD))
                     .map(([category, amount]) => {
-                      const maxAmount = Math.max(...Object.values(stats.incomeByCategory));
-                      const pct = stats.income > 0 ? Math.round((amount / stats.income) * 100) : 0;
+                      const maxAmount = Math.max(...Object.values(stats.incomeByCategory).map(t => t.DOP), 1);
+                      const pct = stats.income > 0 ? Math.round((amount.DOP / stats.income) * 100) : 0;
                       return (
                         <div key={category} className="flex items-center gap-2 text-xs">
                           <div className="w-6 h-6 rounded-md flex items-center justify-center bg-green-50">
@@ -1004,10 +1039,10 @@ export default function FinancesPage() {
                           <span className="w-20 truncate text-gray-700 font-medium">{CATEGORY_LABELS[category as TransactionCategory] || category}</span>
                           <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
                             <div className="h-full bg-green-500 rounded-full transition-all duration-500"
-                              style={{ width: `${Math.max((amount / maxAmount) * 100, 3)}%` }} />
+                              style={{ width: `${Math.max((amount.DOP / maxAmount) * 100, 3)}%` }} />
                           </div>
                           <span className="w-10 text-right text-gray-400">{pct}%</span>
-                          <span className="w-20 text-right font-semibold text-gray-900">${amount.toLocaleString()}</span>
+                          <span className="w-24 text-right font-semibold text-gray-900">{formatMoneyMulti(amount)}</span>
                         </div>
                       );
                     })}
@@ -1048,7 +1083,7 @@ export default function FinancesPage() {
                           b.percentage >= 100 ? 'bg-red-500' : b.percentage >= 80 ? 'bg-yellow-500' : 'bg-green-500'
                         }`} style={{ width: `${Math.min(b.percentage, 100)}%` }} />
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">${b.spent.toLocaleString()} / ${b.amount.toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{formatMoney(b.spent)} / {formatMoney(b.amount)}</p>
                     </div>
                   </div>
                 ))}
@@ -1217,7 +1252,7 @@ export default function FinancesPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className={`text-sm font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                          {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                          {t.type === 'income' ? '+' : '-'}{formatMoney(t.amount, txCurrency(t))}
                         </span>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={(e) => { e.stopPropagation(); handleEdit(t); }}
@@ -1274,13 +1309,13 @@ export default function FinancesPage() {
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-lg font-bold text-brand-navy">
-                      ${budgetProgress.reduce((s, b) => s + b.amount, 0).toLocaleString()}
+                      {formatMoney(budgetProgress.reduce((s, b) => s + b.amount, 0))}
                     </p>
                     <p className="text-[10px] text-gray-500">Total Presupuestado</p>
                   </div>
                   <div>
                     <p className="text-lg font-bold text-red-600">
-                      ${budgetProgress.reduce((s, b) => s + b.spent, 0).toLocaleString()}
+                      {formatMoney(budgetProgress.reduce((s, b) => s + b.spent, 0))}
                     </p>
                     <p className="text-[10px] text-gray-500">Total Gastado</p>
                   </div>
@@ -1288,7 +1323,7 @@ export default function FinancesPage() {
                     <p className={`text-lg font-bold ${
                       budgetProgress.reduce((s, b) => s + b.remaining, 0) >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      ${budgetProgress.reduce((s, b) => s + b.remaining, 0).toLocaleString()}
+                      {formatMoney(budgetProgress.reduce((s, b) => s + b.remaining, 0))}
                     </p>
                     <p className="text-[10px] text-gray-500">Disponible</p>
                   </div>
@@ -1326,17 +1361,17 @@ export default function FinancesPage() {
                             }`} style={{ width: `${Math.min(b.percentage, 100)}%` }} />
                           </div>
                           <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Gastado: ${b.spent.toLocaleString()}</span>
-                            <span>Límite: ${b.amount.toLocaleString()}</span>
+                            <span>Gastado: {formatMoney(b.spent)}</span>
+                            <span>Límite: {formatMoney(b.amount)}</span>
                           </div>
                           {b.remaining < 0 && (
                             <p className="text-[10px] text-red-500 mt-1 font-medium">
-                              Excedido por ${Math.abs(b.remaining).toLocaleString()}
+                              Excedido por {formatMoney(Math.abs(b.remaining))}
                             </p>
                           )}
                           {b.remaining > 0 && b.percentage >= 80 && (
                             <p className="text-[10px] text-yellow-600 mt-1">
-                              Quedan ${b.remaining.toLocaleString()} disponibles
+                              Quedan {formatMoney(b.remaining)} disponibles
                             </p>
                           )}
                         </div>

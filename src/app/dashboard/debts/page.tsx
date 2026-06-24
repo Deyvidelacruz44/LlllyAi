@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
-import { Debt, DebtType, DebtCategory, DebtFrequency, DebtStatus } from '@/types';
+import { Debt, DebtType, DebtCategory, DebtFrequency, DebtStatus, Currency } from '@/types';
+import { formatMoney, formatMoneyMulti, sumByCurrency } from '@/lib/format';
 import {
   Plus, Edit2, Trash2, Search, TrendingDown, DollarSign,
   Home, CreditCard, Receipt, CheckCircle2, Pause, Clock, CalendarDays,
@@ -44,6 +45,7 @@ export default function DebtsPage() {
     name: '',
     description: '',
     amount: '',
+    currency: 'DOP',
     totalDebt: '',
     frequency: 'monthly',
     dueDay: '',
@@ -121,6 +123,7 @@ export default function DebtsPage() {
         name: formData.name,
         description: formData.description || null,
         amount: parseFloat(formData.amount),
+        currency: formData.currency,
         totalDebt: formData.totalDebt ? parseFloat(formData.totalDebt) : null,
         totalPaid: editingDebt?.totalPaid || 0,
         frequency: formData.frequency,
@@ -171,6 +174,7 @@ export default function DebtsPage() {
       name: debt.name,
       description: debt.description || '',
       amount: debt.amount.toString(),
+      currency: debt.currency || 'DOP',
       totalDebt: debt.totalDebt?.toString() || '',
       frequency: debt.frequency,
       dueDay: debt.dueDay?.toString() || '',
@@ -187,7 +191,7 @@ export default function DebtsPage() {
   const resetForm = () => {
     setFormData({
       type: 'fixed_expense', category: 'servicios_basicos', name: '', description: '',
-      amount: '', totalDebt: '', frequency: 'monthly', dueDay: '',
+      amount: '', currency: 'DOP', totalDebt: '', frequency: 'monthly', dueDay: '',
       startDate: format(new Date(), 'yyyy-MM-dd'), endDate: '',
       creditor: '', interestRate: '', notes: '', status: 'active',
     });
@@ -332,32 +336,31 @@ export default function DebtsPage() {
     const debtItems = active.filter(d => d.type === 'debt');
     const overdue = active.filter(d => d.status === 'overdue');
 
-    const monthlyFixed = fixedExpenses.reduce((sum, d) => {
+    // Monto periódico normalizado a mensual. one_time: cuenta 0 para gastos
+    // fijos (no es recurrente) pero su monto completo para deudas.
+    const monthlyAmount = (d: Debt, oneTimeFull: boolean): number => {
       switch (d.frequency) {
-        case 'weekly': return sum + d.amount * 4.33;
-        case 'biweekly': return sum + d.amount * 2.17;
-        case 'monthly': return sum + d.amount;
-        case 'quarterly': return sum + d.amount / 3;
-        case 'yearly': return sum + d.amount / 12;
-        default: return sum;
+        case 'weekly': return d.amount * 4.33;
+        case 'biweekly': return d.amount * 2.17;
+        case 'monthly': return d.amount;
+        case 'quarterly': return d.amount / 3;
+        case 'yearly': return d.amount / 12;
+        default: return oneTimeFull ? d.amount : 0;
       }
-    }, 0);
+    };
+    const curOf = (d: Debt): Currency => d.currency || 'DOP';
 
-    const monthlyDebt = debtItems.reduce((sum, d) => {
-      switch (d.frequency) {
-        case 'weekly': return sum + d.amount * 4.33;
-        case 'biweekly': return sum + d.amount * 2.17;
-        case 'monthly': return sum + d.amount;
-        case 'quarterly': return sum + d.amount / 3;
-        case 'yearly': return sum + d.amount / 12;
-        default: return sum + d.amount;
-      }
-    }, 0);
-
-    const totalDebtRemaining = debtItems.reduce((sum, d) => {
-      if (d.totalDebt) return sum + (d.totalDebt - (d.totalPaid || 0));
-      return sum;
-    }, 0);
+    const monthlyFixed = sumByCurrency(fixedExpenses, (d) => monthlyAmount(d, false), curOf);
+    const monthlyDebt = sumByCurrency(debtItems, (d) => monthlyAmount(d, true), curOf);
+    const totalMonthly: Record<Currency, number> = {
+      DOP: monthlyFixed.DOP + monthlyDebt.DOP,
+      USD: monthlyFixed.USD + monthlyDebt.USD,
+    };
+    const totalDebtRemaining = sumByCurrency(
+      debtItems.filter(d => d.totalDebt),
+      (d) => (d.totalDebt! - (d.totalPaid || 0)),
+      curOf,
+    );
 
     const upcomingDue = active.filter(d => {
       const days = getDaysUntilDue(d);
@@ -365,7 +368,7 @@ export default function DebtsPage() {
     });
 
     return {
-      totalMonthly: monthlyFixed + monthlyDebt,
+      totalMonthly,
       monthlyFixed,
       monthlyDebt,
       totalDebtRemaining,
@@ -431,7 +434,7 @@ export default function DebtsPage() {
             <div className="p-1.5 bg-rose-100 rounded-lg"><TrendingDown className="w-4 h-4 text-rose-600" /></div>
             <p className="text-xs text-gray-500">Total Mensual</p>
           </div>
-          <p className="text-xl font-bold text-rose-600">${Math.round(stats.totalMonthly).toLocaleString()}</p>
+          <p className="text-lg font-bold text-rose-600 leading-tight">{formatMoneyMulti(stats.totalMonthly)}</p>
           <span className="text-[10px] text-gray-400">{stats.activeCount} obligaciones activas</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -439,7 +442,7 @@ export default function DebtsPage() {
             <div className="p-1.5 bg-brand-navy/10 rounded-lg"><Home className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Gastos Fijos</p>
           </div>
-          <p className="text-xl font-bold text-brand-navy">${Math.round(stats.monthlyFixed).toLocaleString()}</p>
+          <p className="text-lg font-bold text-brand-navy leading-tight">{formatMoneyMulti(stats.monthlyFixed)}</p>
           <span className="text-[10px] text-gray-400">{stats.fixedCount} gastos fijos</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -447,7 +450,7 @@ export default function DebtsPage() {
             <div className="p-1.5 bg-red-100 rounded-lg"><CreditCard className="w-4 h-4 text-red-600" /></div>
             <p className="text-xs text-gray-500">Cuotas Deuda</p>
           </div>
-          <p className="text-xl font-bold text-red-600">${Math.round(stats.monthlyDebt).toLocaleString()}</p>
+          <p className="text-lg font-bold text-red-600 leading-tight">{formatMoneyMulti(stats.monthlyDebt)}</p>
           <span className="text-[10px] text-gray-400">{stats.debtCount} deudas</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -455,7 +458,7 @@ export default function DebtsPage() {
             <div className="p-1.5 bg-amber-100 rounded-lg"><AlertTriangle className="w-4 h-4 text-amber-600" /></div>
             <p className="text-xs text-gray-500">Deuda Total</p>
           </div>
-          <p className="text-xl font-bold text-gray-900">${Math.round(stats.totalDebtRemaining).toLocaleString()}</p>
+          <p className="text-lg font-bold text-gray-900 leading-tight">{formatMoneyMulti(stats.totalDebtRemaining)}</p>
           {stats.overdueCount > 0 ? (
             <span className="text-[10px] text-red-500 font-medium">{stats.overdueCount} vencidas</span>
           ) : (
@@ -478,7 +481,7 @@ export default function DebtsPage() {
                 <div key={d.id} className="flex items-center justify-between text-xs">
                   <span className="text-amber-700">{d.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-amber-800">${d.amount.toLocaleString()}</span>
+                    <span className="font-bold text-amber-800">{formatMoney(d.amount, d.currency || 'DOP')}</span>
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                       days === 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                     }`}>
@@ -601,7 +604,7 @@ export default function DebtsPage() {
                   </div>
 
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-gray-900">${debt.amount.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-gray-900">{formatMoney(debt.amount, debt.currency || 'DOP')}</p>
                     {debt.nextDueDate && debt.status === 'active' && (
                       <p className={`text-[10px] font-medium ${
                         dueStatus === 'overdue' ? 'text-red-500' :
@@ -623,8 +626,8 @@ export default function DebtsPage() {
                 {debtProgress !== null && (
                   <div className="px-4 pb-2">
                     <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
-                      <span>Pagado: ${(debt.totalPaid || 0).toLocaleString()}</span>
-                      <span>Total: ${(debt.totalDebt || 0).toLocaleString()}</span>
+                      <span>Pagado: {formatMoney(debt.totalPaid || 0, debt.currency || 'DOP')}</span>
+                      <span>Total: {formatMoney(debt.totalDebt || 0, debt.currency || 'DOP')}</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div className={`h-full rounded-full transition-all duration-700 ${
@@ -690,7 +693,7 @@ export default function DebtsPage() {
                                   {p.date instanceof Date ? format(p.date, 'dd MMM yyyy', { locale: es }) : 'Fecha'}
                                 </span>
                               </div>
-                              <span className="font-bold text-green-600">${p.amount.toLocaleString()}</span>
+                              <span className="font-bold text-green-600">{formatMoney(p.amount, debt.currency || 'DOP')}</span>
                             </div>
                           ))}
                         </div>
@@ -743,26 +746,33 @@ export default function DebtsPage() {
           </div>
           <div className="space-y-2">
             {(() => {
-              const categoryTotals: Record<string, { amount: number; count: number }> = {};
-              debts.filter(d => d.status === 'active').forEach(d => {
-                let monthly = d.amount;
+              const monthlyOf = (d: Debt): number => {
                 switch (d.frequency) {
-                  case 'weekly': monthly = d.amount * 4.33; break;
-                  case 'biweekly': monthly = d.amount * 2.17; break;
-                  case 'quarterly': monthly = d.amount / 3; break;
-                  case 'yearly': monthly = d.amount / 12; break;
+                  case 'weekly': return d.amount * 4.33;
+                  case 'biweekly': return d.amount * 2.17;
+                  case 'quarterly': return d.amount / 3;
+                  case 'yearly': return d.amount / 12;
+                  default: return d.amount;
                 }
-                if (!categoryTotals[d.category]) categoryTotals[d.category] = { amount: 0, count: 0 };
-                categoryTotals[d.category].amount += monthly;
+              };
+              const categoryTotals: Record<string, { totals: Record<Currency, number>; count: number }> = {};
+              debts.filter(d => d.status === 'active').forEach(d => {
+                const cur: Currency = d.currency || 'DOP';
+                if (!categoryTotals[d.category]) categoryTotals[d.category] = { totals: { DOP: 0, USD: 0 }, count: 0 };
+                categoryTotals[d.category].totals[cur] += monthlyOf(d);
                 categoryTotals[d.category].count++;
               });
-              const sorted = Object.entries(categoryTotals).sort(([, a], [, b]) => b.amount - a.amount);
-              const maxAmount = sorted.length > 0 ? sorted[0][1].amount : 1;
+              // Orden y ancho de barra por el monto en DOP (moneda dominante); USD desempata.
+              const sorted = Object.entries(categoryTotals).sort(
+                ([, a], [, b]) => (b.totals.DOP - a.totals.DOP) || (b.totals.USD - a.totals.USD),
+              );
+              const maxAmount = sorted.reduce((m, [, d]) => Math.max(m, d.totals.DOP, d.totals.USD), 1);
 
               return sorted.map(([cat, data]) => {
                 const CatIcon = DEBT_CATEGORY_ICONS[cat as DebtCategory] || DollarSign;
                 const color = DEBT_CATEGORY_COLORS[cat as DebtCategory] || '#6b7280';
-                const pct = Math.round((data.amount / maxAmount) * 100);
+                const barBase = data.totals.DOP || data.totals.USD;
+                const pct = Math.round((barBase / maxAmount) * 100);
                 return (
                   <div key={cat} className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -772,7 +782,7 @@ export default function DebtsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <span className="text-xs text-gray-700">{DEBT_CATEGORY_LABELS[cat as DebtCategory]}</span>
-                        <span className="text-xs font-bold text-gray-900">${Math.round(data.amount).toLocaleString()}/mes</span>
+                        <span className="text-xs font-bold text-gray-900">{formatMoneyMulti(data.totals)}/mes</span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-1.5">
                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
@@ -785,7 +795,7 @@ export default function DebtsPage() {
           </div>
           <div className="mt-3 pt-3 border-t flex items-center justify-between">
             <span className="text-xs text-gray-500">Total mensual estimado</span>
-            <span className="text-sm font-bold text-gray-900">${Math.round(stats.totalMonthly).toLocaleString()}</span>
+            <span className="text-sm font-bold text-gray-900">{formatMoneyMulti(stats.totalMonthly)}</span>
           </div>
         </div>
       )}

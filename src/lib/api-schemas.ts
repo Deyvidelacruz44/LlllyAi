@@ -52,6 +52,7 @@ export const createTransactionSchema = z.object({
   type: z.enum(['income', 'expense', 'transfer']).default('expense'),
   category: z.string().min(1).max(100),
   amount: z.number().positive(),
+  currency: z.enum(['DOP', 'USD']).optional().default('DOP'),
   description: z.string().max(500).optional().default(''),
   date: isoDateString.optional(),
   account: z.string().max(100).optional().default(''),

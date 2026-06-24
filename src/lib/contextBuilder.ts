@@ -8,9 +8,11 @@ import {
 } from 'firebase/firestore';
 import {
   startOfDay, endOfDay, addDays, startOfMonth, endOfMonth,
-  isToday, isPast, isBefore, isAfter, format,
+  isToday, isPast, isBefore, isAfter, format, subMonths,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatMoney, txCurrency } from '@/lib/format';
+import type { Currency } from '@/types';
 
 // ── Types ──────────────────────────────────────────────
 export interface SmartContext {
@@ -37,11 +39,14 @@ export interface SmartContext {
     total: number;
   };
   finances: {
-    monthIncome: number;
-    monthExpenses: number;
-    monthBalance: number;
+    monthIncome: number;          // en DOP
+    monthExpenses: number;        // en DOP
+    monthBalance: number;         // en DOP
+    monthIncomeUSD: number;       // ingresos del mes en USD (aparte)
+    monthExpensesUSD: number;     // gastos del mes en USD (aparte)
     recentTransactions: ContextTransaction[];
     budgetAlerts: BudgetAlert[];
+    history: MonthSummary[];
   };
   debts: {
     activeDebts: ContextDebt[];
@@ -78,6 +83,7 @@ interface ContextTransaction {
   description: string;
   type: string;
   amount: number;
+  currency: Currency;
   category: string;
   date: string;
 }
@@ -89,10 +95,19 @@ interface BudgetAlert {
   percentUsed: number;
 }
 
+interface MonthSummary {
+  month: string;          // "2026-04"
+  income: number;         // DOP
+  expenses: number;       // DOP
+  expensesUSD: number;    // gastos del mes en USD (aparte)
+  topCategories: { category: string; amount: number }[];
+}
+
 interface ContextDebt {
   id: string;
   name: string;
   amount: number;
+  currency: Currency;
   totalDebt?: number;
   totalPaid?: number;
   nextDueDate?: string;
@@ -138,7 +153,8 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
   const [eventsSnap, tasksSnap, txSnap, budgetsSnap, debtsSnap, receivablesSnap] = await Promise.all([
     getDocs(query(collection(db, 'events'), where('userId', '==', userId), limit(50))),
     getDocs(query(collection(db, 'tasks'), where('userId', '==', userId), limit(50))),
-    getDocs(query(collection(db, 'transactions'), where('userId', '==', userId), limit(50))),
+    // 250 docs to cover ~3 months of history (bot ~16 tx/month + cash entries)
+    getDocs(query(collection(db, 'transactions'), where('userId', '==', userId), limit(250))),
     getDocs(query(collection(db, 'budgets'), where('userId', '==', userId), limit(20))).catch(() => ({ docs: [] })),
     getDocs(query(collection(db, 'debts'), where('userId', '==', userId), limit(30))).catch(() => ({ docs: [] })),
     getDocs(query(collection(db, 'receivables'), where('userId', '==', userId), limit(30))).catch(() => ({ docs: [] })),
@@ -221,28 +237,37 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
   });
 
   // ── Process Finances ──
-  const allTransactions = txSnap.docs.map(d => {
-    const data = d.data();
-    return {
-      id: d.id,
-      description: data.description,
-      type: data.type,
-      amount: data.amount || 0,
-      category: data.category || 'otro',
-      date: data.date?.toDate?.() || new Date(),
-    };
-  });
+  const allTransactions = txSnap.docs
+    .filter(d => !d.data().archived)
+    .map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        description: data.description,
+        type: data.type,
+        amount: data.amount || 0,
+        currency: txCurrency(data as { currency?: Currency; tags?: string[] }),
+        category: data.category || 'otro',
+        date: data.date?.toDate?.() || new Date(),
+      };
+    });
 
   const monthTransactions = allTransactions.filter(t =>
     t.date >= monthStart && t.date <= monthEnd
   );
 
+  // DOP (moneda dominante) y USD se reportan por separado; nunca se suman juntos.
   const monthIncome = monthTransactions
-    .filter(t => t.type === 'income')
+    .filter(t => t.type === 'income' && t.currency === 'DOP')
     .reduce((s, t) => s + t.amount, 0);
-
   const monthExpenses = monthTransactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && t.currency === 'DOP')
+    .reduce((s, t) => s + t.amount, 0);
+  const monthIncomeUSD = monthTransactions
+    .filter(t => t.type === 'income' && t.currency === 'USD')
+    .reduce((s, t) => s + t.amount, 0);
+  const monthExpensesUSD = monthTransactions
+    .filter(t => t.type === 'expense' && t.currency === 'USD')
     .reduce((s, t) => s + t.amount, 0);
 
   const recentTx = allTransactions
@@ -253,23 +278,49 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
       description: t.description,
       type: t.type,
       amount: t.amount,
+      currency: t.currency,
       category: t.category,
       date: format(t.date, 'yyyy-MM-dd'),
     }));
 
-  // Budget alerts
+  // Budget alerts — presupuestos en DOP: solo cuenta el gasto en pesos.
   const budgetAlerts: BudgetAlert[] = [];
   const budgets = budgetsSnap.docs.map(d => d.data());
   for (const budget of budgets) {
     const cat = budget.category;
     const budgetAmount = budget.amount || 0;
     const spent = monthTransactions
-      .filter(t => t.type === 'expense' && t.category === cat)
+      .filter(t => t.type === 'expense' && t.category === cat && t.currency === 'DOP')
       .reduce((s, t) => s + t.amount, 0);
     const percentUsed = budgetAmount > 0 ? Math.round((spent / budgetAmount) * 100) : 0;
     if (percentUsed >= 80) {
       budgetAlerts.push({ category: cat, budgetAmount, spent, percentUsed });
     }
+  }
+
+  // ── 3-month historical summary (previous 2 months) ──
+  const history: MonthSummary[] = [];
+  for (let i = 2; i >= 1; i--) {
+    const mStart = startOfMonth(subMonths(now, i));
+    const mEnd   = endOfMonth(subMonths(now, i));
+    const mLabel = format(mStart, 'yyyy-MM');
+    const mTx    = allTransactions.filter(t => t.date >= mStart && t.date <= mEnd);
+
+    const mIncome   = mTx.filter(t => t.type === 'income'  && t.currency === 'DOP').reduce((s, t) => s + t.amount, 0);
+    const mExpenses = mTx.filter(t => t.type === 'expense' && t.currency === 'DOP').reduce((s, t) => s + t.amount, 0);
+    const mExpensesUSD = mTx.filter(t => t.type === 'expense' && t.currency === 'USD').reduce((s, t) => s + t.amount, 0);
+
+    // Top 5 expense categories (en DOP)
+    const catTotals: Record<string, number> = {};
+    for (const t of mTx.filter(t => t.type === 'expense' && t.currency === 'DOP')) {
+      catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+    }
+    const topCategories = Object.entries(catTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([category, amount]) => ({ category, amount }));
+
+    history.push({ month: mLabel, income: mIncome, expenses: mExpenses, expensesUSD: mExpensesUSD, topCategories });
   }
 
   // ── Process Debts ──
@@ -279,6 +330,7 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
       id: d.id,
       name: data.name,
       amount: data.amount || 0,
+      currency: (data.currency === 'USD' ? 'USD' : 'DOP') as Currency,
       totalDebt: data.totalDebt || null,
       totalPaid: data.totalPaid || 0,
       nextDueDate: data.nextDueDate?.toDate?.() || null,
@@ -292,7 +344,8 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
     .filter(d => d.nextDueDate && isBefore(d.nextDueDate, weekEnd))
     .sort((a, b) => (a.nextDueDate?.getTime() || 0) - (b.nextDueDate?.getTime() || 0));
 
-  const totalOwed = activeDebts.reduce((s, d) => {
+  // Total adeudado en DOP (las obligaciones en USD se listan por separado).
+  const totalOwed = activeDebts.filter(d => d.currency === 'DOP').reduce((s, d) => {
     if (d.totalDebt) return s + (d.totalDebt - d.totalPaid);
     return s + d.amount;
   }, 0);
@@ -301,6 +354,7 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
     id: d.id,
     name: d.name,
     amount: d.amount,
+    currency: d.currency,
     totalDebt: d.totalDebt || undefined,
     totalPaid: d.totalPaid || undefined,
     nextDueDate: d.nextDueDate ? format(d.nextDueDate, 'yyyy-MM-dd') : undefined,
@@ -358,7 +412,7 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
     alerts.push({
       type: 'budget_warning',
       severity: ba.percentUsed >= 100 ? 'critical' : 'warning',
-      message: `Presupuesto de ${ba.category}: ${ba.percentUsed}% usado ($${ba.spent.toLocaleString()} de $${ba.budgetAmount.toLocaleString()})`,
+      message: `Presupuesto de ${ba.category}: ${ba.percentUsed}% usado (${formatMoney(ba.spent)} de ${formatMoney(ba.budgetAmount)})`,
     });
   }
 
@@ -367,13 +421,13 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
       alerts.push({
         type: 'debt_due',
         severity: 'critical',
-        message: `Pago vencido: ${debt.name} - $${debt.amount.toLocaleString()}`,
+        message: `Pago vencido: ${debt.name} - ${formatMoney(debt.amount, debt.currency)}`,
       });
     } else {
       alerts.push({
         type: 'debt_due',
         severity: 'warning',
-        message: `Pago próximo: ${debt.name} - $${debt.amount.toLocaleString()} (${debt.nextDueDate ? format(debt.nextDueDate, 'dd MMM', { locale: es }) : ''})`,
+        message: `Pago próximo: ${debt.name} - ${formatMoney(debt.amount, debt.currency)} (${debt.nextDueDate ? format(debt.nextDueDate, 'dd MMM', { locale: es }) : ''})`,
       });
     }
   }
@@ -383,7 +437,7 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
       alerts.push({
         type: 'receivable_overdue',
         severity: 'warning',
-        message: `Cobro vencido: ${recv.debtorName} te debe $${(recv.totalAmount - recv.amountPaid).toLocaleString()}`,
+        message: `Cobro vencido: ${recv.debtorName} te debe ${formatMoney(recv.totalAmount - recv.amountPaid)}`,
       });
     }
   }
@@ -415,8 +469,11 @@ export async function buildSmartContext(userId: string): Promise<SmartContext> {
       monthIncome: monthIncome,
       monthExpenses: monthExpenses,
       monthBalance: monthIncome - monthExpenses,
+      monthIncomeUSD,
+      monthExpensesUSD,
       recentTransactions: recentTx,
       budgetAlerts,
+      history,
     },
     debts: {
       activeDebts: activeDebts.map(formatDebt),
@@ -470,7 +527,7 @@ export function generateSmartGreeting(context: SmartContext, userName?: string):
 
   if (finances.monthBalance !== 0) {
     const sign = finances.monthBalance >= 0 ? '+' : '';
-    parts.push(`📊 Balance del mes: ${sign}$${finances.monthBalance.toLocaleString()}`);
+    parts.push(`📊 Balance del mes: ${sign}${formatMoney(finances.monthBalance)}`);
   }
 
   greeting += parts.join('\n');
@@ -543,11 +600,11 @@ export function contextToPromptString(ctx: SmartContext): string {
   }
   sections.push('');
 
-  // Finances
-  sections.push('💰 FINANZAS (este mes):');
-  sections.push(`  Ingresos: $${ctx.finances.monthIncome.toLocaleString()}`);
-  sections.push(`  Gastos: $${ctx.finances.monthExpenses.toLocaleString()}`);
-  sections.push(`  Balance: $${ctx.finances.monthBalance.toLocaleString()}`);
+  // Finances — current month. DOP y USD se reportan por separado (no se mezclan).
+  sections.push('💰 FINANZAS (este mes) — montos en RD$ salvo que diga US$:');
+  sections.push(`  Ingresos: ${formatMoney(ctx.finances.monthIncome)}${ctx.finances.monthIncomeUSD > 0 ? ` + ${formatMoney(ctx.finances.monthIncomeUSD, 'USD')}` : ''}`);
+  sections.push(`  Gastos: ${formatMoney(ctx.finances.monthExpenses)}${ctx.finances.monthExpensesUSD > 0 ? ` + ${formatMoney(ctx.finances.monthExpensesUSD, 'USD')}` : ''}`);
+  sections.push(`  Balance: ${formatMoney(ctx.finances.monthBalance)}`);
   if (ctx.finances.budgetAlerts.length > 0) {
     sections.push('  ⚠️ Alertas de presupuesto:');
     for (const ba of ctx.finances.budgetAlerts) {
@@ -557,17 +614,31 @@ export function contextToPromptString(ctx: SmartContext): string {
   if (ctx.finances.recentTransactions.length > 0) {
     sections.push(`  Últimas transacciones:`);
     for (const t of ctx.finances.recentTransactions.slice(0, 5)) {
-      sections.push(`    - ${t.type === 'income' ? '+' : '-'}$${t.amount.toLocaleString()} ${t.description} (${t.category}, ${t.date})`);
+      sections.push(`    - ${t.type === 'income' ? '+' : '-'}${formatMoney(t.amount, t.currency)} ${t.description} (${t.category}, ${t.date})`);
     }
   }
   sections.push('');
 
+  // Finances — historical (previous 2 months)
+  if (ctx.finances.history.length > 0) {
+    sections.push('📈 HISTORIAL FINANCIERO (últimos 2 meses):');
+    for (const m of ctx.finances.history) {
+      const usdNote = m.expensesUSD > 0 ? ` (+ ${formatMoney(m.expensesUSD, 'USD')} en gastos USD)` : '';
+      sections.push(`  ${m.month}: ingresos ${formatMoney(m.income)} | gastos ${formatMoney(m.expenses)} | balance ${formatMoney(m.income - m.expenses)}${usdNote}`);
+      if (m.topCategories.length > 0) {
+        const cats = m.topCategories.map(c => `${c.category} ${formatMoney(c.amount)}`).join(', ');
+        sections.push(`    Top: ${cats}`);
+      }
+    }
+    sections.push('');
+  }
+
   // Debts
   if (ctx.debts.activeDebts.length > 0) {
     sections.push('💳 DEUDAS / GASTOS FIJOS:');
-    sections.push(`  Total adeudado: $${ctx.debts.totalOwed.toLocaleString()}`);
+    sections.push(`  Total adeudado (RD$): ${formatMoney(ctx.debts.totalOwed)}`);
     for (const d of ctx.debts.activeDebts.slice(0, 5)) {
-      sections.push(`    - ${d.name}: $${d.amount.toLocaleString()}/pago${d.nextDueDate ? ` (próximo: ${d.nextDueDate})` : ''}`);
+      sections.push(`    - ${d.name}: ${formatMoney(d.amount, d.currency)}/pago${d.nextDueDate ? ` (próximo: ${d.nextDueDate})` : ''}`);
     }
     sections.push('');
   }
@@ -575,9 +646,9 @@ export function contextToPromptString(ctx: SmartContext): string {
   // Receivables
   if (ctx.receivables.pending.length > 0) {
     sections.push('📥 CUENTAS POR COBRAR:');
-    sections.push(`  Total por cobrar: $${ctx.receivables.totalOwedToUser.toLocaleString()}`);
+    sections.push(`  Total por cobrar: ${formatMoney(ctx.receivables.totalOwedToUser)}`);
     for (const r of ctx.receivables.pending.slice(0, 5)) {
-      sections.push(`    - ${r.debtorName}: $${r.remaining.toLocaleString()} pendiente`);
+      sections.push(`    - ${r.debtorName}: ${formatMoney(r.remaining)} pendiente`);
     }
     sections.push('');
   }

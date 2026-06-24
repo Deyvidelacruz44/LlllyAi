@@ -164,18 +164,23 @@ export type TransactionCategory =
   | 'regalo'
   | 'otro';
 
+/** Monedas soportadas. Por defecto todo es DOP (peso dominicano). */
+export type Currency = 'DOP' | 'USD';
+
 export interface Transaction {
   id: string;
   userId: string;
   type: TransactionType;
   category: TransactionCategory;
   amount: number;
+  currency?: Currency;      // default 'DOP' si no está presente
   description: string;
   date: Date;
   account?: string;
   tags?: string[];
   isRecurring?: boolean;
   recurringFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+  archived?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -224,6 +229,7 @@ export interface Debt {
   name: string;
   description?: string;
   amount: number;           // Monto del pago periódico
+  currency?: Currency;      // Moneda del monto — default 'DOP'
   totalDebt?: number;       // Deuda total (solo para type=debt)
   totalPaid?: number;       // Total ya pagado
   frequency: DebtFrequency;
@@ -262,6 +268,7 @@ export interface Receivable {
   description: string;
   totalAmount: number;       // Monto total que deben
   amountPaid: number;        // Cuánto han pagado
+  currency?: Currency;       // Moneda del cobro — default 'DOP'
   dueDate?: Date;
   status: ReceivableStatus;
   category?: string;

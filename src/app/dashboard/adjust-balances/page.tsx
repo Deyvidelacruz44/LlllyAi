@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, deleteDoc, doc, addDoc, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, Trash2, DollarSign, Plus, X } from 'lucide-react';
 import Link from 'next/link';
+import { formatMoney } from '@/lib/format';
 
 interface BalanceEntry {
   id: string;
@@ -82,13 +83,15 @@ export default function AdjustBalancesPage() {
       snapshot.docs.forEach(d => {
         const data = d.data();
         const acct = data.account || 'principal';
+        const cur = data.currency === 'USD' || data.tags?.[0] === 'USD' ? 'USD' : 'DOP';
+        if (cur !== 'DOP') return; // balances en pesos; los cargos USD se ignoran aquí
         if (!currentBalances[acct]) currentBalances[acct] = 0;
         if (data.type === 'income') currentBalances[acct] += data.amount;
         else if (data.type === 'expense') currentBalances[acct] -= data.amount;
       });
 
       for (const [acct, bal] of Object.entries(currentBalances)) {
-        addLog(`   ${acct}: $${bal.toLocaleString()}`);
+        addLog(`   ${acct}: ${formatMoney(bal)}`);
       }
 
       // 2. Delete all existing transactions
@@ -112,15 +115,16 @@ export default function AdjustBalancesPage() {
           description: entry.description,
           date: dateTs,
           account: entry.account,
+          currency: 'DOP',
           isRecurring: false,
           recurringFrequency: null,
           createdAt: now,
           updatedAt: now,
         });
-        addLog(`   ✅ ${entry.description}: $${entry.amount.toLocaleString()}`);
+        addLog(`   ✅ ${entry.description}: ${formatMoney(entry.amount)}`);
       }
 
-      addLog(`🎉 ¡Listo! Balance total: $${total.toLocaleString()}`);
+      addLog(`🎉 ¡Listo! Balance total: ${formatMoney(total)}`);
       setStep('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -167,7 +171,7 @@ export default function AdjustBalancesPage() {
             ))}
             <div className="flex items-center justify-between pt-2 border-t-2 border-gray-200">
               <span className="text-sm font-bold text-gray-900">Total</span>
-              <span className="text-base font-bold text-gray-900">${total.toLocaleString()}</span>
+              <span className="text-base font-bold text-gray-900">{formatMoney(total)}</span>
             </div>
           </div>
         )}

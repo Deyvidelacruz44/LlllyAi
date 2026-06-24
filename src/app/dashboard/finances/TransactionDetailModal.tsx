@@ -4,6 +4,7 @@ import { Transaction, TransactionCategory } from '@/types';
 import { DollarSign, X, Calendar as CalendarIcon, Repeat, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatMoney, txCurrency } from '@/lib/format';
 import {
   CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ACCENT, CATEGORY_ICONS, getAccountOption,
 } from './constants';
@@ -58,7 +59,7 @@ export default function TransactionDetailModal({
 
         <div className="text-center py-4 bg-gray-50 rounded-xl mb-4">
           <p className={`text-4xl font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-            {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+            {t.type === 'income' ? '+' : '-'}{formatMoney(t.amount, txCurrency(t))}
           </p>
         </div>
 

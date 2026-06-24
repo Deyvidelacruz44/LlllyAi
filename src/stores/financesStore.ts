@@ -66,7 +66,7 @@ export const useFinancesStore = create<FinancesState>((set, get) => ({
       const ref = collection(db, 'transactions');
       const q = query(ref, where('userId', '==', userId));
       const snapshot = await getDocs(q);
-      const transactions = snapshot.docs.map(parseTxDoc);
+      const transactions = snapshot.docs.map(parseTxDoc).filter(t => !t.archived);
       transactions.sort((a, b) => b.date.getTime() - a.date.getTime());
       set({ transactions, loading: false, error: null });
     } catch (err: any) {
@@ -99,6 +99,7 @@ export const useFinancesStore = create<FinancesState>((set, get) => ({
       type: data.type || 'expense',
       category: data.category || 'otro',
       amount: data.amount || 0,
+      currency: data.currency || 'DOP',
       description: data.description || '',
       date: data.date ? Timestamp.fromDate(data.date) : Timestamp.now(),
       account: data.account || '',

@@ -84,4 +84,28 @@ describe('parseTransaction', () => {
     expect(r.account).toBe('efectivo_yo');
     expect(r.category).toBe('alimentacion');
   });
+
+  it('defaults to DOP when no currency is mentioned', () => {
+    const r = parseTransaction('gasté 500 en comida');
+    expect(r.currency).toBe('DOP');
+  });
+
+  it('detects USD from "dólares"', () => {
+    const r = parseTransaction('gasté 12 dólares en Netflix');
+    expect(r.currency).toBe('USD');
+    expect(r.amount).toBe(12);
+    expect(r.category).toBe('entretenimiento');
+  });
+
+  it('detects USD from "usd"', () => {
+    const r = parseTransaction('pagué 33 usd de GitHub');
+    expect(r.currency).toBe('USD');
+    expect(r.amount).toBe(33);
+  });
+
+  it('detects USD from "dolares" (sin tilde)', () => {
+    const r = parseTransaction('20 dolares en Spotify');
+    expect(r.currency).toBe('USD');
+    expect(r.amount).toBe(20);
+  });
 });

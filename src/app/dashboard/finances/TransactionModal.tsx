@@ -1,7 +1,8 @@
 'use client';
 
-import { TransactionType, TransactionCategory } from '@/types';
+import { TransactionType, TransactionCategory, Currency } from '@/types';
 import { X, ArrowUpCircle, ArrowDownCircle, DollarSign, Repeat } from 'lucide-react';
+import { CURRENCY_SYMBOL } from '@/lib/format';
 import {
   CATEGORY_LABELS, CATEGORY_ICONS, INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_OPTIONS,
 } from './constants';
@@ -10,6 +11,7 @@ export interface TransactionFormData {
   type: TransactionType;
   category: TransactionCategory;
   amount: string;
+  currency: Currency;
   description: string;
   date: string;
   account: string;
@@ -60,15 +62,28 @@ export default function TransactionModal({
             </button>
           </div>
 
-          {/* Amount */}
+          {/* Amount + Currency */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Monto</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
-              <input type="number" step="0.01" min="0" value={formData.amount}
-                onChange={(e) => onFormChange({ ...formData, amount: e.target.value })}
-                required placeholder="0.00"
-                className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-lg font-bold" />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">{CURRENCY_SYMBOL[formData.currency]}</span>
+                <input type="number" step="0.01" min="0" value={formData.amount}
+                  onChange={(e) => onFormChange({ ...formData, amount: e.target.value })}
+                  required placeholder="0.00"
+                  className="w-full pl-12 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-lg font-bold" />
+              </div>
+              <div className="flex bg-gray-100 rounded-xl p-1">
+                {(['DOP', 'USD'] as Currency[]).map((cur) => (
+                  <button key={cur} type="button"
+                    onClick={() => onFormChange({ ...formData, currency: cur })}
+                    className={`px-3 rounded-lg text-xs font-bold transition-all ${
+                      formData.currency === cur ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                    }`}>
+                    {CURRENCY_SYMBOL[cur]}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

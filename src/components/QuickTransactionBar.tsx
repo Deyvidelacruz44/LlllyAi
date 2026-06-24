@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Mic, Send, Sparkles, Check, Loader2 } from 'lucide-react';
 import { parseTransaction, type ParsedTransaction } from '@/lib/parseTransaction';
 import { CATEGORY_LABELS } from '@/app/dashboard/finances/constants';
+import { formatMoney, CURRENCY_SYMBOL } from '@/lib/format';
+import type { Currency } from '@/types';
 
 interface QuickTransactionBarProps {
   onSubmit: (parsed: ParsedTransaction) => Promise<void>;
@@ -11,6 +13,7 @@ interface QuickTransactionBarProps {
 
 export default function QuickTransactionBar({ onSubmit }: QuickTransactionBarProps) {
   const [text, setText] = useState('');
+  const [currency, setCurrency] = useState<Currency>('DOP');
   const [listening, setListening] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -41,12 +44,17 @@ export default function QuickTransactionBar({ onSubmit }: QuickTransactionBarPro
       flash(false, "No detecté el monto. Ej: “gasté 500 en comida”");
       return;
     }
+    // El texto manda si menciona la moneda explícitamente; si no, usa el toggle.
+    const finalParsed: ParsedTransaction = {
+      ...parsed,
+      currency: parsed.currency === 'USD' ? 'USD' : currency,
+    };
     setBusy(true);
     try {
-      await onSubmit(parsed);
+      await onSubmit(finalParsed);
       setText('');
-      const sign = parsed.type === 'income' ? '+' : '-';
-      flash(true, `${parsed.type === 'income' ? 'Ingreso' : 'Gasto'} ${sign}$${parsed.amount?.toLocaleString()} · ${CATEGORY_LABELS[parsed.category]} (${parsed.description})`);
+      const sign = finalParsed.type === 'income' ? '+' : '-';
+      flash(true, `${finalParsed.type === 'income' ? 'Ingreso' : 'Gasto'} ${sign}${formatMoney(finalParsed.amount || 0, finalParsed.currency)} · ${CATEGORY_LABELS[finalParsed.category]} (${finalParsed.description})`);
     } catch {
       flash(false, 'No se pudo registrar. Intenta de nuevo.');
     } finally {
@@ -95,7 +103,21 @@ export default function QuickTransactionBar({ onSubmit }: QuickTransactionBarPro
       <div className="flex items-center gap-1.5 mb-2">
         <Sparkles className="w-3.5 h-3.5 text-brand-orange" />
         <span className="text-xs font-medium text-gray-700 dark:text-text-secondary">Registro rápido</span>
-        <span className="text-[10px] text-gray-400 dark:text-text-tertiary ml-auto">Escribe o dicta: &ldquo;gasté 500 en comida&rdquo;</span>
+        <div className="ml-auto flex bg-gray-100 dark:bg-surface-secondary rounded-lg p-0.5">
+          {(['DOP', 'USD'] as Currency[]).map((cur) => (
+            <button
+              key={cur}
+              type="button"
+              onClick={() => setCurrency(cur)}
+              className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${
+                currency === cur ? 'bg-white dark:bg-surface shadow-sm text-gray-900 dark:text-text-primary' : 'text-gray-400 dark:text-text-tertiary'
+              }`}
+              title={cur === 'DOP' ? 'Pesos dominicanos' : 'Dólares'}
+            >
+              {CURRENCY_SYMBOL[cur]}
+            </button>
+          ))}
+        </div>
       </div>
 
       <form

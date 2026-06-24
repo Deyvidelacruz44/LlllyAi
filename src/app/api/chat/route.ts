@@ -91,6 +91,7 @@ const LILLY_TOOLS: Anthropic.Tool[] = [
       properties: {
         description: { type: 'string', description: 'Descripción de la transacción' },
         amount: { type: 'number', description: 'Monto numérico (sin símbolo de moneda)' },
+        currency: { type: 'string', enum: ['DOP', 'USD'], description: 'Moneda del monto: DOP (pesos dominicanos, por defecto) o USD (dólares). Usa USD solo si el usuario lo menciona explícitamente.' },
         transaction_type: { type: 'string', enum: ['expense', 'income'] },
         category: {
           type: 'string',
@@ -260,6 +261,7 @@ INSTRUCCIONES:
 - Para consultas o conversación, responde en texto normal
 - Sé PROACTIVA: si ves tareas vencidas, presupuestos excedidos o conflictos, menciónalo
 - Para horas: "3pm" = "15:00", "9am" = "09:00"
+- Finanzas con dos monedas: DOP (pesos RD$, por defecto) y USD (dólares US$). Si el usuario menciona "dólares"/"USD", registra en USD; si no, asume DOP. NUNCA sumes pesos y dólares juntos: si te piden un total con ambas monedas, repórtalas por separado (ej. "RD$19,000 y US$33")
 - Si no especifica prioridad, usa "medium"; si no especifica hora fin, asume +1 hora
 - Para completar/eliminar: busca el ID exacto en el contexto. Si no lo encuentras, pregunta
 - Cuando el usuario diga su nombre o comparta información personal, usa "remember"

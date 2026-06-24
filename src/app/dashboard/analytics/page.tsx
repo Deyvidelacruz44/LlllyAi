@@ -18,6 +18,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ProductivityMeter from '@/components/ProductivityMeter';
+import { formatMoney, txCurrency } from '@/lib/format';
 
 // ===== INTERFACES =====
 interface LocalStats {
@@ -43,6 +44,9 @@ interface LocalStats {
 interface FinanceStats {
   monthlyIncome: number;
   monthlyExpenses: number;
+  monthlyIncomeUSD: number;     // gastos/ingresos en USD se llevan aparte (no se mezclan con DOP)
+  monthlyExpensesUSD: number;
+  obligationsUSD: number;       // gastos fijos + deudas en USD
   balance: number;
   savingsRate: number;
   transactionCount: number;
@@ -212,18 +216,22 @@ export default function AnalyticsPage() {
     // --- Transactions ---
     const transactions = transactionsSnap.docs.map(doc => {
       const d = doc.data();
-      return { type: d.type as string, category: d.category as string, amount: d.amount as number, date: d.date?.toDate() || new Date() };
+      return { type: d.type as string, category: d.category as string, amount: d.amount as number, currency: txCurrency(d as { currency?: 'DOP' | 'USD'; tags?: string[] }), date: d.date?.toDate() || new Date() };
     });
     const monthlyTx = transactions.filter(t => isWithinInterval(t.date, { start: monthStart, end: monthEnd }));
 
-    let monthlyIncome = 0, monthlyExpenses = 0;
+    // Métricas en DOP (moneda dominante). El gasto/ingreso en USD se acumula aparte.
+    let monthlyIncome = 0, monthlyExpenses = 0, monthlyIncomeUSD = 0, monthlyExpensesUSD = 0;
     const expensesByCategory: Record<string, number> = {};
     const incomeByCategory: Record<string, number> = {};
     monthlyTx.forEach(t => {
+      const isUSD = t.currency === 'USD';
       if (t.type === 'income') {
+        if (isUSD) { monthlyIncomeUSD += t.amount; return; }
         monthlyIncome += t.amount;
         incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
       } else if (t.type === 'expense') {
+        if (isUSD) { monthlyExpensesUSD += t.amount; return; }
         monthlyExpenses += t.amount;
         expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
       }
@@ -241,7 +249,7 @@ export default function AnalyticsPage() {
     const dailySpending = days.map(day => {
       let dayExpense = 0, dayIncome = 0;
       monthlyTx.forEach(t => {
-        if (isSameDay(t.date, day)) {
+        if (isSameDay(t.date, day) && t.currency === 'DOP') {
           if (t.type === 'expense') dayExpense += t.amount;
           else if (t.type === 'income') dayIncome += t.amount;
         }
@@ -252,7 +260,7 @@ export default function AnalyticsPage() {
     // --- Debts ---
     const debts = debtsSnap.docs.map(doc => {
       const d = doc.data();
-      return { type: d.type as string, amount: d.amount as number, totalDebt: d.totalDebt as number | undefined, totalPaid: (d.totalPaid as number) || 0, frequency: d.frequency as string, status: d.status as string };
+      return { type: d.type as string, amount: d.amount as number, currency: (d.currency === 'USD' ? 'USD' : 'DOP') as 'DOP' | 'USD', totalDebt: d.totalDebt as number | undefined, totalPaid: (d.totalPaid as number) || 0, frequency: d.frequency as string, status: d.status as string };
     });
 
     const normalizeToMonthly = (amount: number, freq: string) => {
@@ -267,15 +275,20 @@ export default function AnalyticsPage() {
       }
     };
 
-    let monthlyFixed = 0, monthlyDebt = 0, totalDebtRemaining = 0, activeDebts = 0, overdueDebts = 0;
+    let monthlyFixed = 0, monthlyDebt = 0, obligationsUSD = 0, totalDebtRemaining = 0, activeDebts = 0, overdueDebts = 0;
     debts.forEach(d => {
       if (d.status === 'active' || d.status === 'overdue') {
         activeDebts++;
         if (d.status === 'overdue') overdueDebts++;
         const monthly = normalizeToMonthly(d.amount, d.frequency);
-        if (d.type === 'fixed_expense') monthlyFixed += monthly;
-        else monthlyDebt += monthly;
-        if (d.type === 'debt' && d.totalDebt) totalDebtRemaining += d.totalDebt - d.totalPaid;
+        if (d.currency === 'USD') {
+          obligationsUSD += monthly;          // obligaciones en USD aparte (no se suman a DOP)
+        } else if (d.type === 'fixed_expense') {
+          monthlyFixed += monthly;
+        } else {
+          monthlyDebt += monthly;
+        }
+        if (d.type === 'debt' && d.currency !== 'USD' && d.totalDebt) totalDebtRemaining += d.totalDebt - d.totalPaid;
       }
     });
 
@@ -300,7 +313,8 @@ export default function AnalyticsPage() {
     const collectionRate = totalLent > 0 ? Math.round((totalCollected / totalLent) * 100) : 0;
 
     setFinanceStats({
-      monthlyIncome, monthlyExpenses, balance, savingsRate, transactionCount: monthlyTx.length,
+      monthlyIncome, monthlyExpenses, monthlyIncomeUSD, monthlyExpensesUSD, obligationsUSD,
+      balance, savingsRate, transactionCount: monthlyTx.length,
       topExpenseCategory, topExpenseAmount, expensesByCategory, incomeByCategory, dailySpending,
       totalMonthlyObligations: monthlyFixed + monthlyDebt, monthlyFixed, monthlyDebt,
       totalDebtRemaining, activeDebts, overdueDebts,
@@ -381,10 +395,6 @@ export default function AnalyticsPage() {
   }, [user, localStats, financeStats, dateRange]);
 
   // ===== HELPERS =====
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-  };
-
   const getMaxBarValue = (data: Array<{ expense: number; income: number }>) => {
     return Math.max(...data.map(d => Math.max(d.expense, d.income)), 1);
   };
@@ -472,7 +482,7 @@ export default function AnalyticsPage() {
               <span className="text-xs text-white/70">Balance mes</span>
             </div>
             <p className={`text-2xl font-bold ${(financeStats?.balance || 0) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
-              {formatCurrency(financeStats?.balance || 0)}
+              {formatMoney(financeStats?.balance || 0)}
             </p>
             <p className="text-[10px] text-white/60">Ahorro: {financeStats?.savingsRate || 0}%</p>
           </div>
@@ -652,31 +662,37 @@ export default function AnalyticsPage() {
                 <div className="bg-emerald-100 p-1.5 rounded-lg"><ArrowUpCircle className="w-4 h-4 text-emerald-600" /></div>
                 <span className="text-xs text-gray-500">Ingresos</span>
               </div>
-              <p className="text-lg font-bold text-emerald-600">{formatCurrency(financeStats?.monthlyIncome || 0)}</p>
-              <p className="text-[10px] text-gray-400 mt-1">Este mes</p>
+              <p className="text-lg font-bold text-emerald-600">{formatMoney(financeStats?.monthlyIncome || 0)}</p>
+              {(financeStats?.monthlyIncomeUSD || 0) > 0
+                ? <p className="text-[10px] text-emerald-500 font-medium mt-1">+ {formatMoney(financeStats!.monthlyIncomeUSD, 'USD')}</p>
+                : <p className="text-[10px] text-gray-400 mt-1">Este mes</p>}
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-2">
                 <div className="bg-red-100 p-1.5 rounded-lg"><ArrowDownCircle className="w-4 h-4 text-red-600" /></div>
                 <span className="text-xs text-gray-500">Gastos</span>
               </div>
-              <p className="text-lg font-bold text-red-600">{formatCurrency(financeStats?.monthlyExpenses || 0)}</p>
-              <p className="text-[10px] text-gray-400 mt-1">Este mes</p>
+              <p className="text-lg font-bold text-red-600">{formatMoney(financeStats?.monthlyExpenses || 0)}</p>
+              {(financeStats?.monthlyExpensesUSD || 0) > 0
+                ? <p className="text-[10px] text-red-500 font-medium mt-1">+ {formatMoney(financeStats!.monthlyExpensesUSD, 'USD')}</p>
+                : <p className="text-[10px] text-gray-400 mt-1">Este mes</p>}
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-2">
                 <div className="bg-brand-navy/10 p-1.5 rounded-lg"><CreditCard className="w-4 h-4 text-brand-navy" /></div>
                 <span className="text-xs text-gray-500">Obligaciones</span>
               </div>
-              <p className="text-lg font-bold text-brand-navy">{formatCurrency(financeStats?.totalMonthlyObligations || 0)}</p>
-              <p className="text-[10px] text-gray-400 mt-1">Fijos + Deudas/mes</p>
+              <p className="text-lg font-bold text-brand-navy">{formatMoney(financeStats?.totalMonthlyObligations || 0)}</p>
+              {(financeStats?.obligationsUSD || 0) > 0
+                ? <p className="text-[10px] text-brand-navy font-medium mt-1">+ {formatMoney(financeStats!.obligationsUSD, 'USD')}/mes</p>
+                : <p className="text-[10px] text-gray-400 mt-1">Fijos + Deudas/mes</p>}
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-3 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 mb-2">
                 <div className="bg-brand-blue/20 p-1.5 rounded-lg"><HandCoins className="w-4 h-4 text-brand-navy" /></div>
                 <span className="text-xs text-gray-500">Por cobrar</span>
               </div>
-              <p className="text-lg font-bold text-brand-navy">{formatCurrency(financeStats?.totalPendingReceivables || 0)}</p>
+              <p className="text-lg font-bold text-brand-navy">{formatMoney(financeStats?.totalPendingReceivables || 0)}</p>
               <p className="text-[10px] text-gray-400 mt-1">{financeStats?.activeReceivables || 0} activas</p>
             </div>
           </div>
@@ -714,13 +730,13 @@ export default function AnalyticsPage() {
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Balance neto</span>
                     <span className={`font-bold ${(financeStats?.balance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {formatCurrency(financeStats?.balance || 0)}
+                      {formatMoney(financeStats?.balance || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Disponible real</span>
                     <span className={`font-bold ${((financeStats?.balance || 0) - (financeStats?.totalMonthlyObligations || 0)) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {formatCurrency((financeStats?.balance || 0) - (financeStats?.totalMonthlyObligations || 0))}
+                      {formatMoney((financeStats?.balance || 0) - (financeStats?.totalMonthlyObligations || 0))}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs">
@@ -746,7 +762,7 @@ export default function AnalyticsPage() {
                         <div className="flex items-center justify-between text-xs mb-0.5">
                           <span className="text-gray-600">{CATEGORY_LABELS[cat] || cat}</span>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{formatCurrency(amt)}</span>
+                            <span className="font-bold text-gray-900">{formatMoney(amt)}</span>
                             <span className="text-gray-400 w-8 text-right">{pct}%</span>
                           </div>
                         </div>
@@ -783,16 +799,16 @@ export default function AnalyticsPage() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600">Gastos fijos/mes</span>
-                      <span className="font-bold text-gray-900">{formatCurrency(financeStats?.monthlyFixed || 0)}</span>
+                      <span className="font-bold text-gray-900">{formatMoney(financeStats?.monthlyFixed || 0)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600">Pagos deuda/mes</span>
-                      <span className="font-bold text-gray-900">{formatCurrency(financeStats?.monthlyDebt || 0)}</span>
+                      <span className="font-bold text-gray-900">{formatMoney(financeStats?.monthlyDebt || 0)}</span>
                     </div>
                     {(financeStats?.totalDebtRemaining || 0) > 0 && (
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-600">Deuda restante</span>
-                        <span className="font-bold text-rose-600">{formatCurrency(financeStats?.totalDebtRemaining || 0)}</span>
+                        <span className="font-bold text-rose-600">{formatMoney(financeStats?.totalDebtRemaining || 0)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-xs pt-1">
@@ -808,11 +824,11 @@ export default function AnalyticsPage() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600">Pendiente</span>
-                      <span className="font-bold text-brand-navy">{formatCurrency(financeStats?.totalPendingReceivables || 0)}</span>
+                      <span className="font-bold text-brand-navy">{formatMoney(financeStats?.totalPendingReceivables || 0)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600">Cobrado total</span>
-                      <span className="font-bold text-emerald-600">{formatCurrency(financeStats?.totalCollected || 0)}</span>
+                      <span className="font-bold text-emerald-600">{formatMoney(financeStats?.totalCollected || 0)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600">Tasa cobro</span>
@@ -851,8 +867,8 @@ export default function AnalyticsPage() {
                     />
                     <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                       <p>Día {day.date}</p>
-                      {day.income > 0 && <p className="text-emerald-300">+{formatCurrency(day.income)}</p>}
-                      {day.expense > 0 && <p className="text-red-300">-{formatCurrency(day.expense)}</p>}
+                      {day.income > 0 && <p className="text-emerald-300">+{formatMoney(day.income)}</p>}
+                      {day.expense > 0 && <p className="text-red-300">-{formatMoney(day.expense)}</p>}
                     </div>
                   </div>
                 ))}
@@ -887,7 +903,7 @@ export default function AnalyticsPage() {
                   return (
                     <div key={cat} className="bg-emerald-50 border border-emerald-100 rounded-lg p-2.5 text-center">
                       <p className="text-[10px] text-emerald-600 font-medium">{CATEGORY_LABELS[cat] || cat}</p>
-                      <p className="text-sm font-bold text-gray-900 mt-0.5">{formatCurrency(amt)}</p>
+                      <p className="text-sm font-bold text-gray-900 mt-0.5">{formatMoney(amt)}</p>
                       <p className="text-[10px] text-gray-400">{pct}%</p>
                     </div>
                   );

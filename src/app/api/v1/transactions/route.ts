@@ -87,6 +87,7 @@ export async function POST(request: Request) {
       type: data.type,
       category: data.category,
       amount: data.amount,
+      currency: data.currency,
       description: data.description,
       date: data.date ? Timestamp.fromDate(new Date(data.date)) : Timestamp.now(),
       account: data.account,

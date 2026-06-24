@@ -3,17 +3,25 @@
  * Turns phrases like "gasté 500 en comida" or "cobré 2000 de salario" into a
  * structured transaction so the user can capture finances by voice or one line.
  */
-import type { TransactionType, TransactionCategory } from '@/types';
+import type { TransactionType, TransactionCategory, Currency } from '@/types';
 
 export interface ParsedTransaction {
   type: TransactionType;
   amount: number | null;
   category: TransactionCategory;
+  currency: Currency;
   description: string;
   account: string;
   rawText: string;
   /** true when we found an amount (safe to auto-create) */
   confident: boolean;
+}
+
+// Pistas de moneda; si no aparece ninguna, se asume DOP (pesos).
+const USD_HINTS = ['dólar', 'dolar', 'dólares', 'dolares', 'usd', 'us$', 'u$'];
+
+function detectCurrency(lower: string): Currency {
+  return USD_HINTS.some(h => lower.includes(h)) ? 'USD' : 'DOP';
 }
 
 // Words that signal income (everything else defaults to expense)
@@ -132,6 +140,7 @@ export function parseTransaction(rawText: string): ParsedTransaction {
   const amount = extractAmount(lower);
   const category = detectCategory(lower, type);
   const account = detectAccount(lower);
+  const currency = detectCurrency(lower);
   let description = buildDescription(raw, amount);
 
   // Fall back to a readable description from the category
@@ -150,6 +159,7 @@ export function parseTransaction(rawText: string): ParsedTransaction {
     type,
     amount,
     category,
+    currency,
     description,
     account,
     rawText: raw,

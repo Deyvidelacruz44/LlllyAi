@@ -24,6 +24,9 @@ const TASK_REMINDER_MIN = 30;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
+// Santo Domingo is UTC-4 (no DST). 9pm SD = 01:00 UTC.
+const CASH_REMINDER_UTC_HOUR = 1;
+
 function authorize(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false; // Must be configured
@@ -155,5 +158,104 @@ export async function POST(request: Request) {
     summary.errors++;
   }
 
-  return NextResponse.json({ ok: true, ranAt: now.toISOString(), ...summary });
+  // ── Discover active userIds via FCM tokens ─────────────────────────
+  // Used by budget alerts, cash reminder, and auto-income below.
+  let activeUserIds: string[] = [];
+  try {
+    const tokensSnap = await db.collection('fcm_tokens').where('active', '==', true).get();
+    const seen = new Set<string>();
+    for (const d of tokensSnap.docs) {
+      const uid = d.data().userId as string | undefined;
+      if (uid && !seen.has(uid)) { seen.add(uid); activeUserIds.push(uid); }
+    }
+  } catch (err) {
+    console.error('[cron/reminders] fcm_tokens error:', err);
+  }
+
+  // ── Budget alerts — push when category reaches 80% or 100% ────────
+  const budgetSummary = { alertsSent: 0 };
+  try {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const monthKey   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    for (const userId of activeUserIds) {
+      const [budgetsSnap, txSnap] = await Promise.all([
+        db.collection('budgets').where('userId', '==', userId).get(),
+        db.collection('transactions').where('userId', '==', userId).get(),
+      ]);
+
+      // Presupuestos en DOP: solo cuenta gastos en pesos (los cargos USD van aparte).
+      const monthTx = txSnap.docs
+        .map(d => d.data())
+        .filter(d => {
+          const date = d.date?.toDate?.();
+          const isDOP = d.currency !== 'USD' && d.tags?.[0] !== 'USD';
+          return d.type === 'expense' && isDOP && date && date >= monthStart && date <= monthEnd;
+        });
+
+      for (const budgetDoc of budgetsSnap.docs) {
+        const b = budgetDoc.data();
+        const cat = b.category as string;
+        const limit = (b.amount as number) || 0;
+        if (!cat || limit <= 0) continue;
+
+        const spent = monthTx
+          .filter(t => t.category === cat)
+          .reduce((s, t) => s + (t.amount as number || 0), 0);
+        const pct = Math.round((spent / limit) * 100);
+
+        const threshold = pct >= 100 ? 100 : pct >= 80 ? 80 : 0;
+        if (!threshold) continue;
+
+        const key = `budget_${userId}_${cat}_${monthKey}_${threshold}`;
+        if (await alreadySent(db, key)) continue;
+
+        const icon = threshold >= 100 ? '🔴' : '🟡';
+        const msg  = threshold >= 100
+          ? `Superaste el presupuesto de ${cat} (${pct}% — $${Math.round(spent).toLocaleString()} de $${limit.toLocaleString()})`
+          : `Vas al ${pct}% de tu presupuesto de ${cat} ($${Math.round(spent).toLocaleString()} de $${limit.toLocaleString()})`;
+
+        try {
+          await sendPushToUser(userId, {
+            title: `${icon} Alerta de presupuesto`,
+            body: msg,
+            url: '/dashboard/finances',
+            type: 'finance_alert',
+          });
+          budgetSummary.alertsSent++;
+        } catch { summary.errors++; }
+      }
+    }
+  } catch (err) {
+    console.error('[cron/reminders] budget alerts error:', err);
+    summary.errors++;
+  }
+
+  // ── Cash expense reminder — daily at 9pm Santo Domingo (01:00 UTC) ─
+  const cashReminderSummary = { sent: 0 };
+  if (now.getUTCHours() === CASH_REMINDER_UTC_HOUR) {
+    const dateKey = now.toISOString().slice(0, 10);
+    for (const userId of activeUserIds) {
+      const key = `cash_reminder_${userId}_${dateKey}`;
+      if (await alreadySent(db, key)) continue;
+      try {
+        await sendPushToUser(userId, {
+          title: '💵 ¿Gastos en efectivo hoy?',
+          body: 'Díselo a Lilly para mantener tu registro completo. Solo escribe o dicta el gasto.',
+          url: '/dashboard/finances',
+          type: 'system',
+        });
+        cashReminderSummary.sent++;
+      } catch { summary.errors++; }
+    }
+  }
+
+  return NextResponse.json({
+    ok: true,
+    ranAt: now.toISOString(),
+    ...summary,
+    ...budgetSummary,
+    cashReminderSent: cashReminderSummary.sent,
+  });
 }

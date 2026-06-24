@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
 import { Receivable, ReceivableStatus, ReceivablePaymentRecord } from '@/types';
+import { formatMoney } from '@/lib/format';
 import {
   Plus, Edit2, Trash2, X, Search, DollarSign, User, Phone,
   CheckCircle2, Clock, AlertCircle, Ban, ChevronDown,
@@ -391,7 +392,7 @@ export default function ReceivablesPage() {
             <div className="p-1.5 bg-brand-blue/20 rounded-lg"><HandCoins className="w-4 h-4 text-brand-navy" /></div>
             <p className="text-xs text-gray-500">Por Cobrar</p>
           </div>
-          <p className="text-xl font-bold text-brand-navy">${Math.round(stats.totalPending).toLocaleString()}</p>
+          <p className="text-xl font-bold text-brand-navy">{formatMoney(stats.totalPending)}</p>
           <span className="text-[10px] text-gray-400">{stats.activeCount} cuentas activas</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -399,7 +400,7 @@ export default function ReceivablesPage() {
             <div className="p-1.5 bg-green-100 rounded-lg"><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
             <p className="text-xs text-gray-500">Cobrado</p>
           </div>
-          <p className="text-xl font-bold text-green-600">${Math.round(stats.totalCollected).toLocaleString()}</p>
+          <p className="text-xl font-bold text-green-600">{formatMoney(stats.totalCollected)}</p>
           <span className="text-[10px] text-gray-400">Tasa: {stats.collectionRate}%</span>
         </div>
         <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -439,8 +440,8 @@ export default function ReceivablesPage() {
               style={{ width: `${Math.min(stats.collectionRate, 100)}%` }} />
           </div>
           <div className="flex items-center justify-between mt-1 text-[10px] text-gray-400">
-            <span>Cobrado: ${stats.totalCollected.toLocaleString()}</span>
-            <span>Total prestado: ${stats.totalLent.toLocaleString()}</span>
+            <span>Cobrado: {formatMoney(stats.totalCollected)}</span>
+            <span>Total prestado: {formatMoney(stats.totalLent)}</span>
           </div>
         </div>
       )}
@@ -524,7 +525,7 @@ export default function ReceivablesPage() {
                   </div>
 
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-gray-900">${remaining.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-gray-900">{formatMoney(remaining, rec.currency || 'DOP')}</p>
                     {paidPct > 0 && paidPct < 100 && (
                       <p className="text-[10px] text-brand-navy font-medium">{paidPct}% cobrado</p>
                     )}
@@ -555,11 +556,11 @@ export default function ReceivablesPage() {
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
                         <span className="text-gray-400 text-[10px] uppercase">Monto Total</span>
-                        <p className="text-gray-700 font-bold">${rec.totalAmount.toLocaleString()}</p>
+                        <p className="text-gray-700 font-bold">{formatMoney(rec.totalAmount, rec.currency || 'DOP')}</p>
                       </div>
                       <div>
                         <span className="text-gray-400 text-[10px] uppercase">Pagado</span>
-                        <p className="text-green-600 font-bold">${(rec.amountPaid || 0).toLocaleString()}</p>
+                        <p className="text-green-600 font-bold">{formatMoney(rec.amountPaid || 0, rec.currency || 'DOP')}</p>
                       </div>
                       {rec.debtorContact && (
                         <div>
@@ -611,7 +612,7 @@ export default function ReceivablesPage() {
                                 </span>
                                 {p.note && <span className="text-gray-400">— {p.note}</span>}
                               </div>
-                              <span className="font-bold text-green-600">+${p.amount.toLocaleString()}</span>
+                              <span className="font-bold text-green-600">+{formatMoney(p.amount, rec.currency || 'DOP')}</span>
                             </div>
                           ))}
                         </div>
@@ -696,7 +697,7 @@ export default function ReceivablesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <span className="text-xs text-gray-700 font-medium">{name}</span>
-                        <span className="text-xs font-bold text-gray-900">${remaining.toLocaleString()}</span>
+                        <span className="text-xs font-bold text-gray-900">{formatMoney(remaining)}</span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-1.5">
                         <div className={`h-full rounded-full transition-all duration-500 ${getProgressColor(pct)}`}
@@ -859,7 +860,7 @@ export default function ReceivablesPage() {
               <div className="flex items-center justify-between mt-2 text-xs">
                 <span className="text-gray-500">Pendiente:</span>
                 <span className="font-bold text-gray-900">
-                  ${(paymentReceivable.totalAmount - (paymentReceivable.amountPaid || 0)).toLocaleString()}
+                  {formatMoney(paymentReceivable.totalAmount - (paymentReceivable.amountPaid || 0), paymentReceivable.currency || 'DOP')}
                 </span>
               </div>
             </div>

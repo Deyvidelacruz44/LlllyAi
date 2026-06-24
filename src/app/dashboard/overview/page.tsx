@@ -14,6 +14,7 @@ import { format, isToday, isTomorrow, isPast, isThisWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import ProductivityMeter from '@/components/ProductivityMeter';
+import { formatMoney } from '@/lib/format';
 
 interface Event {
   id: string;
@@ -155,11 +156,13 @@ export default function OverviewPage() {
         const now = new Date();
         const monthStart = startOfMonth(now);
         const monthEnd = endOfMonth(now);
+        // Vistazo en DOP (moneda dominante); los cargos USD se ven en Finanzas/Deudas.
         let monthIncome = 0, monthExpenses = 0, monthCount = 0;
         txSnapshot.docs.forEach((d) => {
           const raw = d.data();
           const date = raw.date?.toDate();
-          if (date && isWithinInterval(date, { start: monthStart, end: monthEnd })) {
+          const cur = raw.currency === 'USD' || raw.tags?.[0] === 'USD' ? 'USD' : 'DOP';
+          if (date && cur === 'DOP' && isWithinInterval(date, { start: monthStart, end: monthEnd })) {
             monthCount++;
             if (raw.type === 'income') monthIncome += raw.amount || 0;
             else if (raw.type === 'expense') monthExpenses += raw.amount || 0;
@@ -620,20 +623,20 @@ export default function OverviewPage() {
                     <ArrowUpCircle className="w-3.5 h-3.5 text-green-500" />
                     <span className="text-xs text-gray-600 dark:text-text-secondary">Ingresos</span>
                   </div>
-                  <span className="text-sm font-bold text-green-600">${financeStats.income.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-green-600">{formatMoney(financeStats.income)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ArrowDownCircle className="w-3.5 h-3.5 text-red-500" />
                     <span className="text-xs text-gray-600 dark:text-text-secondary">Gastos</span>
                   </div>
-                  <span className="text-sm font-bold text-red-600">${financeStats.expenses.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-red-600">{formatMoney(financeStats.expenses)}</span>
                 </div>
               </div>
               <div className="bg-gray-50 dark:bg-surface-secondary rounded-lg p-3 text-center">
                 <p className="text-[10px] text-gray-500 dark:text-text-tertiary mb-0.5">Balance neto</p>
                 <p className={`text-xl font-bold ${financeStats.balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  ${financeStats.balance.toLocaleString()}
+                  {formatMoney(financeStats.balance)}
                 </p>
                 {financeStats.income > 0 && (
                   <p className="text-[10px] text-gray-400 dark:text-text-tertiary mt-0.5">

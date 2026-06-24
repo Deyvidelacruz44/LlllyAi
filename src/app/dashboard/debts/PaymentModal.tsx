@@ -2,6 +2,7 @@
 
 import { Debt } from '@/types';
 import { X, CheckCircle2 } from 'lucide-react';
+import { formatMoney, CURRENCY_SYMBOL } from '@/lib/format';
 
 interface PaymentModalProps {
   debt: Debt;
@@ -34,10 +35,10 @@ export default function PaymentModal({
 
         <div className="bg-gray-50 rounded-xl p-3 mb-4">
           <p className="text-sm font-medium text-gray-900">{debt.name}</p>
-          <p className="text-xs text-gray-500">Cuota: ${debt.amount.toLocaleString()}</p>
+          <p className="text-xs text-gray-500">Cuota: {formatMoney(debt.amount, debt.currency || 'DOP')}</p>
           {debt.totalDebt && (
             <p className="text-xs text-gray-500">
-              Pendiente: ${((debt.totalDebt || 0) - (debt.totalPaid || 0)).toLocaleString()}
+              Pendiente: {formatMoney((debt.totalDebt || 0) - (debt.totalPaid || 0), debt.currency || 'DOP')}
             </p>
           )}
         </div>
@@ -46,10 +47,10 @@ export default function PaymentModal({
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Monto del Pago</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">{CURRENCY_SYMBOL[debt.currency || 'DOP']}</span>
               <input type="number" step="0.01" min="0" value={paymentAmount}
                 onChange={(e) => onAmountChange(e.target.value)}
-                className="w-full pl-8 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg font-bold" />
+                className="w-full pl-12 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg font-bold" />
             </div>
           </div>
 

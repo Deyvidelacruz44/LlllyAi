@@ -50,6 +50,7 @@ export interface AIAction {
     note?: string;
     // Finance fields
     amount?: number;
+    currency?: 'DOP' | 'USD';
     category?: string;
     transaction_type?: 'income' | 'expense';
     account?: string;

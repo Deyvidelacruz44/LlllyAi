@@ -389,7 +389,7 @@ export default function FloatingChat() {
       const txDate = data.date ? new Date(data.date) : data.day_of_week ? getDateFromDayOfWeek(data.day_of_week) : new Date();
       await addDoc(collection(db, 'transactions'), {
         userId: user.uid, type: data.transaction_type || 'expense', category: data.category || 'otro',
-        amount: data.amount, description: data.description, date: Timestamp.fromDate(txDate),
+        amount: data.amount, currency: data.currency || 'DOP', description: data.description, date: Timestamp.fromDate(txDate),
         account: data.account || 'principal', createdAt: Timestamp.now(), updatedAt: Timestamp.now(),
       });
       return true;
